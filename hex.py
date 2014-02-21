@@ -2,44 +2,65 @@
 #  x increasing from left to right, and y increasing from up to down.
 #  Thus, the northern-most vertex of a hexagon drawn in this manner will have
 #  a y-value less than the center of the hexagon.
+import numpy
+import random
+import time
+random.seed(time.time())
 
-def recursive_draw_hex():
-  initial_hex = Hexagon((0,0))
-  east_hex = initial_hex.create_hex_to_east()
-  southeast_hex = initial_hex.create_hex_to_southeast()
-  southwest_hex = initial_hex.create_hex_to_southwest()
-  
+
+def RANDOM_COLOR():
+  return [random.randint(0, 255) for i in range(3)]
+
 
 class Hexagon:
-  def __init__(self, center, northern_most_vertex, side_length, distance_from_center_to_midpoint_of_side):
-    dx = distance_from_center_to_midpoint_of_side
-    dy = side_length
-    x, y = center
-    self.center = (x, y)
+  def __init__(self, center, northern_most_unit_vector_direction, side_length):
+    # The Hexagon class is a representation of a 2D planar hexagon,
+    #  represented in Cartesian coordinates of the center and all vertices.
+    #
+    # center := an absolute point representing the center of hexagon in a
+    #  Cartesian coordinate system.
+    #
+    # northern_most_vertex_direction := a free unit vector indicating the
+    #  direction of the northern-most vertex.
+    #
+    # side_length := a scalar representing the length of any side of the
+    #  resulting hexagon.
+    self.center = numpy.array([center]).T
+    north_dir = side_length*numpy.array([northern_most_unit_vector_direction]).T
+    north = north_dir + self.center
 
-    yd2 = dy/2
-    self.north = tuple(northern_most_vertex)
-    self.northeast = (x+dx, y-yd2)
-    self.southeast = (x+dx, y+yd2)
-    self.south = (x, y+dy)
-    self.southwest = (x-dx, y+yd2)
-    self.northwest = (x-dx, y-yd2)
+    # From the center point and the north vertex, we can compute the other
+    #  vertices of the hexagon. Each vertex, relative to the center, is
+    #  simply the previous vector rotated by 60 degrees (pi/3 radians).
+    pi_d_3 = numpy.pi/3
+    sin_60_degrees = numpy.sin(pi_d_3)
+    cos_60_degrees = numpy.cos(pi_d_3)
+    rotate = numpy.matrix([
+      [cos_60_degrees, -sin_60_degrees],
+      [sin_60_degrees, cos_60_degrees],
+    ])
+
+    # Perform this rotation five times to calculate the direction of all
+    #  six hexagon vertices.
+    self.vertex_directions = [north_dir]
+    self.vertices = [north]
+    for i in range(5):
+      prev_direction = self.vertex_directions[-1]
+      rotated_direction = rotate * prev_direction
+      print(rotated_direction)
+      self.vertex_directions.append(rotated_direction)
+
+      # Calculate Cartesian coordinates of vertex.
+      vertex = rotated_direction + self.center
+      self.vertices.append(vertex)
 
 
-  def draw(self):
-    pass
+  def draw(self, screen, color=RANDOM_COLOR()):
+    from pprint import pprint
+    pygame.draw.polygon(screen, color, self.vertices)
 
-def create_hex_grid(max_x, max_y, hex_side_length,
-                    distance_from_center_to_midpoint_of_side):
-  x = distance_from_center_to_midpoint_of_side
-  y = hex_side_length
-
-  initial_hex = Hexagon(
-    center=(0,0),
-    northern_most_vertex=(0, -y),
-    hex_side_length=y,
-    distance_from_center_to_midpoint_of_side=x
-  )
+    for p in self.vertices:
+      pygame.draw.circle(screen, color, list(p), 4)
 
 
 if __name__ == "__main__":
@@ -54,9 +75,25 @@ if __name__ == "__main__":
   #  the length of side a equal to 26, and the length of side b equal to 45.
   #  This results in the hexagon composed of these triangles having a side
   #  length of 45.
-  create_hex_grid(
-    max_x=640,
-    max_y=480,
-    hex_side_length=45,
-    distance_from_center_to_midpoint_of_side=26
+  import pygame
+  import sys
+  MAX_X = 640
+  MAX_Y = 480
+
+  pygame.init()
+  screen = pygame.display.set_mode((MAX_X, MAX_Y))
+  h = Hexagon(
+    center=(MAX_X/2, MAX_Y/2),
+    northern_most_unit_vector_direction=(0, 1),
+    side_length=100
   )
+  h.draw(screen)
+
+  pygame.display.update()
+  while True:
+    for event in pygame.event.get(): 
+      if event.type == pygame.QUIT: 
+        sys.exit(0) 
+      else:
+        print(event)
+
