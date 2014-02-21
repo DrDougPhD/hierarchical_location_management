@@ -64,6 +64,10 @@ class Hexagon:
       pygame.draw.circle(screen, color, p, 4)
 
 
+def draw_all_hexagons(max_x, max_y, side_length):
+  pass
+
+
 if __name__ == "__main__":
   # Pygame requires integers for drawing coordinates, not real values.
   #  Hexagons have a lot of sqrt(3) in their calculations since they are
