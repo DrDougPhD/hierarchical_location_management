@@ -47,7 +47,6 @@ class Hexagon:
     for i in range(5):
       prev_direction = self.vertex_directions[-1]
       rotated_direction = rotate * prev_direction
-      print(rotated_direction)
       self.vertex_directions.append(rotated_direction)
 
       # Calculate Cartesian coordinates of vertex.
@@ -59,8 +58,10 @@ class Hexagon:
     from pprint import pprint
     pygame.draw.polygon(screen, color, self.vertices)
 
+
+  def draw_vertices(self, screen, color=RANDOM_COLOR()):
     for p in self.vertices:
-      pygame.draw.circle(screen, color, list(p), 4)
+      pygame.draw.circle(screen, color, p, 4)
 
 
 if __name__ == "__main__":
