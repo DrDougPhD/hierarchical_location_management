@@ -14,22 +14,27 @@ def RANDOM_COLOR():
   return [random.randint(0, 255) for i in range(3)]
 
 
+def is_column_vector(v):
+  # v := a numpy array
+  return 1 == v.shape[1]
+
+
 class Hexagon:
   def __init__(self, center, northern_most_unit_vector_direction, side_length):
     # The Hexagon class is a representation of a 2D planar hexagon,
     #  represented in Cartesian coordinates of the center and all vertices.
     #
-    # center := an absolute point representing the center of hexagon in a
-    #  Cartesian coordinate system.
+    # center := an absolute point, as a 2D numpy column vector, representing
+    #  the center of hexagon in a Cartesian coordinate system.
     #
-    # northern_most_vertex_direction := a free unit vector indicating the
-    #  direction of the northern-most vertex.
+    # northern_most_vertex_direction := a free unit vector, as a 2D numpy
+    #  column vector, indicating the direction of the northern-most vertex.
     #
     # side_length := a scalar representing the length of any side of the
     #  resulting hexagon.
-    self.center = numpy.array([center]).T
-    north_dir = side_length*numpy.array([northern_most_unit_vector_direction]).T
-    north = north_dir + self.center
+    self.center = center.copy()
+    self.north_dir = side_length * northern_most_unit_vector_direction
+    north = self.north_dir + self.center
 
     # From the center point and the north vertex, we can compute the other
     #  vertices of the hexagon. Each vertex, relative to the center, is
@@ -44,7 +49,7 @@ class Hexagon:
 
     # Perform this rotation five times to calculate the direction of all
     #  six hexagon vertices.
-    self.vertex_directions = [north_dir]
+    self.vertex_directions = [self.north_dir]
     self.vertices = [north]
     for i in range(5):
       prev_direction = self.vertex_directions[-1]
@@ -54,6 +59,24 @@ class Hexagon:
       # Calculate Cartesian coordinates of vertex.
       vertex = rotated_direction + self.center
       self.vertices.append(vertex)
+
+    self.north_vertex,\
+    self.northeast_vertex,\
+    self.southeast_vertex,\
+    self.south_vertex,\
+    self.southwest_vertex,\
+    self.northwest_vertex = self.vertices
+
+    # The following member variables correspond to points to neighboring
+    #  hexagons related to the topological relationship between this hexagon
+    #  and neighboring hexagons.
+    self.to_northeast = None
+    self.to_east = None
+    self.to_southeast = None
+    self.to_southwest = None
+    self.to_west = None
+    self.to_northwest = None
+    self.neighboring_hexagons = []
 
 
   def draw(self, screen, color=RANDOM_COLOR()):
@@ -75,8 +98,42 @@ class Hexagon:
     return [(p[0], MAX_Y - p[1]) for p in points]
 
 
-def draw_all_hexagons(max_x, max_y, side_length):
-  pass
+def recursive_draw_hexagons(hexagon, max_x, max_y, side_length):
+  # Create all hexagons adjacent to the one passed in, and link them together
+  #  relative to their topological relationship.
+  if hexagon.to_northeast is None:
+    ne_center = hexagon.northeast_vertex + hexagon.north_dir
+    ne_hexagon = Hexagon(
+      center,
+      northern_most_unit_vector_direction,
+      side_length=side_length
+    )
+
+  if hexagon.to_east is None:
+    pass
+
+  if hexagon.to_southeast is None:
+    pass
+
+  if hexagon.to_southwest is None:
+    pass
+
+  if hexagon.to_west is None:
+    pass
+
+  if hexagon.to_northwest is None:
+    pass
+
+
+def draw_all_hexagons(max_x, max_y, side_length, screen):
+  initial_hex = Hexagon(
+    center=numpy.array([(0, 0)]).T,
+    northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
+    side_length=100
+  )
+  initial_hex.draw(screen)
+
+  #recursive_draw_hexagons(initial_hex, max_x, max_y, side_length)
 
 
 if __name__ == "__main__":
@@ -96,13 +153,12 @@ if __name__ == "__main__":
 
   pygame.init()
   screen = pygame.display.set_mode((MAX_X, MAX_Y))
-  h = Hexagon(
-    center=(0, 0), #(MAX_X/2, MAX_Y/2),
-    northern_most_unit_vector_direction=(0, 1),
-    side_length=100
+  draw_all_hexagons(
+    max_x=MAX_X,
+    max_y=MAX_Y,
+    side_length=100,
+    screen=screen
   )
-  h.draw(screen)
-  h.draw_vertices(screen)
 
   pygame.display.update()
   while True:
