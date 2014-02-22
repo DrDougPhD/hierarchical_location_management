@@ -148,6 +148,42 @@ class Hexagon:
     return hexagon
 
 
+  def create_southwest_hexagon(self):
+    center = self.center + self.south_dir + self.southwest_dir
+    hexagon = Hexagon(
+      center=center,
+      northern_most_unit_vector_direction=self.north_unit_dir,
+      side_length=self.side_length
+    )
+    self.southwest_hexagon = hexagon
+    hexagon.northeast_hexagon = self
+    return hexagon
+
+
+  def create_west_hexagon(self):
+    center = self.center + self.southwest_dir + self.northwest_dir
+    hexagon = Hexagon(
+      center=center,
+      northern_most_unit_vector_direction=self.north_unit_dir,
+      side_length=self.side_length
+    )
+    self.west_hexagon = hexagon
+    hexagon.east_hexagon = self
+    return hexagon
+
+
+  def create_northwest_hexagon(self):
+    center = self.center + self.northwest_dir + self.north_dir
+    hexagon = Hexagon(
+      center=center,
+      northern_most_unit_vector_direction=self.north_unit_dir,
+      side_length=self.side_length
+    )
+    self.northwest_hexagon = hexagon
+    hexagon.southeast_hexagon = self
+    return hexagon
+
+
 def recursive_draw_hexagons(hexagon, max_x, max_y, side_length, screen):
   # Create all hexagons adjacent to the one passed in, and link them together
   #  relative to their topological relationship.
@@ -164,13 +200,16 @@ def recursive_draw_hexagons(hexagon, max_x, max_y, side_length, screen):
     new_hexagon.draw(screen)
 
   if hexagon.southwest_hexagon is None:
-    pass
+    new_hexagon = hexagon.create_southwest_hexagon()
+    new_hexagon.draw(screen)
 
   if hexagon.west_hexagon is None:
-    pass
+    new_hexagon = hexagon.create_west_hexagon()
+    new_hexagon.draw(screen)
 
   if hexagon.northwest_hexagon is None:
-    pass
+    new_hexagon = hexagon.create_northwest_hexagon()
+    new_hexagon.draw(screen)
 
 
 def draw_all_hexagons(max_x, max_y, side_length, screen):
