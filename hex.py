@@ -131,8 +131,20 @@ class Hexagon:
       northern_most_unit_vector_direction=self.north_unit_dir,
       side_length=self.side_length
     )
-    self.southeast_hexagon = hexagon
+    self.east_hexagon = hexagon
     hexagon.west_hexagon = self
+    return hexagon
+
+
+  def create_southeast_hexagon(self):
+    center = self.center + self.southeast_dir + self.south_dir
+    hexagon = Hexagon(
+      center=center,
+      northern_most_unit_vector_direction=self.north_unit_dir,
+      side_length=self.side_length
+    )
+    self.southeast_hexagon = hexagon
+    hexagon.northwest_hexagon = self
     return hexagon
 
 
@@ -148,7 +160,8 @@ def recursive_draw_hexagons(hexagon, max_x, max_y, side_length, screen):
     new_hexagon.draw(screen)
 
   if hexagon.southeast_hexagon is None:
-    pass
+    new_hexagon = hexagon.create_southeast_hexagon()
+    new_hexagon.draw(screen)
 
   if hexagon.southwest_hexagon is None:
     pass
