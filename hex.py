@@ -19,8 +19,41 @@ def is_column_vector(v):
   return 1 == v.shape[1]
 
 
+def is_within_frame(v):
+  x, y = v
+  return 0 <= x <= MAX_X and 0 <= y <= MAX_Y
+
+
 class Hexagon:
-  def __init__(self, center, northern_most_unit_vector_direction, side_length):
+  number_of_sides = 6
+  neighbor_order = ["NE", "E", "SE", "SW", "W", "NW"]
+  vertex_order = ["N", "NE", "SE", "S", "SW", "NW"]
+  neighbor_index = {"NE": 0, "E": 1, "SE": 2, "SW": 3, "W": 4, "NW": 5}
+  vertex_order = {"N": 0, "NE": 1, "SE": 2, "S": 3, "SW": 4, "NW": 5}
+
+  def __init__(self, center=None, northern_most_unit_vector_direction=None, side_length=None):
+    # The Hexagon class is a representation of a 2D planar hexagon,
+    #  represented in Cartesian coordinates of the center and all vertices.
+    #
+    # center := an absolute point, as a 2D numpy column vector, representing
+    #  the center of hexagon in a Cartesian coordinate system.
+    #
+    # northern_most_vertex_direction := a free unit vector, as a 2D numpy
+    #  column vector, indicating the direction of the northern-most vertex.
+    #
+    # side_length := a scalar representing the length of any side of the
+    #  resulting hexagon.
+
+    if center is not None and\
+       northern_most_unit_vector_direction is not None and\
+       side_length is not None:
+      self.set(center, northern_most_unit_vector_direction, side_length)
+      self.initialized = True
+    else:
+      self.initialized = False
+
+
+  def set(self, center, northern_most_unit_vector_direction, side_length):
     # The Hexagon class is a representation of a 2D planar hexagon,
     #  represented in Cartesian coordinates of the center and all vertices.
     #
@@ -79,112 +112,91 @@ class Hexagon:
     # The following member variables correspond to points to neighboring
     #  hexagons related to the topological relationship between this hexagon
     #  and neighboring hexagons.
-    self.northeast_hexagon = None
-    self.east_hexagon = None
-    self.southeast_hexagon = None
-    self.southwest_hexagon = None
-    self.west_hexagon = None
-    self.northwest_hexagon = None
-    self.neighboring_hexagons = []
+    self.neighboring_hexagons = [Hexagon() for i in range(6)]
+    self.northeast_hexagon,\
+    self.east_hexagon,\
+    self.southeast_hexagon,\
+    self.southwest_hexagon,\
+    self.west_hexagon,\
+    self.northwest_hexagon = self.neighboring_hexagons
 
 
   def draw(self, screen, color=None):
-    if color is None:
-      color = RANDOM_COLOR()
-    pygame.draw.polygon(
-      screen,
-      color,
-      self.transform_points_for_pygame(self.vertices)
-    )
+    if self.initialized:
+      if color is None:
+        color = RANDOM_COLOR()
+      pygame.draw.polygon(
+        screen,
+        color,
+        self.transform_points_for_pygame(self.vertices)
+      )
 
 
   def draw_vertices(self, screen, color=None):
-    if color is None:
-      color = RANDOM_COLOR()
-
-    map(
-      lambda p: pygame.draw.circle(screen, color, p, 4),
-      self.transform_points_for_pygame(self.vertices)
-    )
+    if self.initialized:
+      if color is None:
+        color = RANDOM_COLOR()
+      map(
+        lambda p: pygame.draw.circle(screen, color, p, 4),
+        self.transform_points_for_pygame(self.vertices)
+      )
 
 
   def transform_points_for_pygame(self, points):
     return [(p[0], MAX_Y - p[1]) for p in points]
 
 
-  def create_northeast_hexagon(self):
-    center = self.center + self.northeast_dir + self.north_dir
+  def create_neighbor(self, i):
+    # Create the neighbor of this hexagon according to the neighbor index.
+    center = self.center + self.vertex_directions[i] +\
+             self.vertex_directions[self.previous_neighbor_index(i)]
     hexagon = Hexagon(
       center=center,
       northern_most_unit_vector_direction=self.north_unit_dir,
       side_length=self.side_length
     )
-    self.northeast_hexagon = hexagon
-    hexagon.southwest_hexagon = self
     return hexagon
+
+
+  def previous_neighbor_index(self, i):
+    return (i-1)%self.number_of_sides
+
+
+  def next_neighbor_index(self, i):
+    return (i+1)%self.number_of_sides
+
+
+  def create_northeast_hexagon(self):
+    return self.create_neighbor(0)
 
 
   def create_east_hexagon(self):
-    center = self.center + self.northeast_dir + self.southeast_dir
-    hexagon = Hexagon(
-      center=center,
-      northern_most_unit_vector_direction=self.north_unit_dir,
-      side_length=self.side_length
-    )
-    self.east_hexagon = hexagon
-    hexagon.west_hexagon = self
-    return hexagon
+    return self.create_neighbor(1)
 
 
   def create_southeast_hexagon(self):
-    center = self.center + self.southeast_dir + self.south_dir
-    hexagon = Hexagon(
-      center=center,
-      northern_most_unit_vector_direction=self.north_unit_dir,
-      side_length=self.side_length
-    )
-    self.southeast_hexagon = hexagon
-    hexagon.northwest_hexagon = self
-    return hexagon
+    return self.create_neighbor(2)
 
 
   def create_southwest_hexagon(self):
-    center = self.center + self.south_dir + self.southwest_dir
-    hexagon = Hexagon(
-      center=center,
-      northern_most_unit_vector_direction=self.north_unit_dir,
-      side_length=self.side_length
-    )
-    self.southwest_hexagon = hexagon
-    hexagon.northeast_hexagon = self
-    return hexagon
+    return self.create_neighbor(3)
 
 
   def create_west_hexagon(self):
-    center = self.center + self.southwest_dir + self.northwest_dir
-    hexagon = Hexagon(
-      center=center,
-      northern_most_unit_vector_direction=self.north_unit_dir,
-      side_length=self.side_length
-    )
-    self.west_hexagon = hexagon
-    hexagon.east_hexagon = self
-    return hexagon
+    return self.create_neighbor(4)
 
 
   def create_northwest_hexagon(self):
-    center = self.center + self.northwest_dir + self.north_dir
-    hexagon = Hexagon(
-      center=center,
-      northern_most_unit_vector_direction=self.north_unit_dir,
-      side_length=self.side_length
-    )
-    self.northwest_hexagon = hexagon
-    hexagon.southeast_hexagon = self
-    return hexagon
+    return self.create_neighbor(5)
 
 
-def recursive_draw_hexagons(hexagon, max_x, max_y, side_length, screen):
+def draw_hexagon_and_create_neighbors(hexagon, screen, s):
+  print("#"*40)
+  print(hexagon)
+  print(s)
+
+  hexagon.draw(screen)
+
   # Create all hexagons adjacent to the one passed in, and link them together
   #  relative to their topological relationship.
   no_NE = hexagon.northeast_hexagon is None
@@ -194,65 +206,122 @@ def recursive_draw_hexagons(hexagon, max_x, max_y, side_length, screen):
   no_W = hexagon.west_hexagon is None
   no_NW = hexagon.northwest_hexagon is None
 
-  if no_NE:
+  if hexagon.northeast_hexagon is None:# no_NE:
     ne_hexagon = hexagon.create_northeast_hexagon()
-    ne_hexagon.draw(screen)
+  else:
+    ne_hexagon = hexagon.northeast_hexagon
 
-  if no_E:
+  if hexagon.east_hexagon is None:# no_E:
     e_hexagon = hexagon.create_east_hexagon()
-    e_hexagon.draw(screen)
+  else:
+    e_hexagon = hexagon.east_hexagon
 
-  if no_SE:
-    we_hexagon = hexagon.create_southeast_hexagon()
-    se_hexagon.draw(screen)
+  if hexagon.southeast_hexagon is None:# no_SE:
+    se_hexagon = hexagon.create_southeast_hexagon()
+  else:
+    se_hexagon = hexagon.southeast_hexagon
 
-  if no_SW:
+  if hexagon.southwest_hexagon is None:# no_SW:
     sw_hexagon = hexagon.create_southwest_hexagon()
-    sw_hexagon.draw(screen)
+  else:
+    sw_hexagon = hexagon.southwest_hexagon
 
-  if no_W:
+  if hexagon.west_hexagon is None:# no_W:
     w_hexagon = hexagon.create_west_hexagon()
-    w_hexagon.draw(screen)
+  else:
+    w_hexagon = hexagon.west_hexagon
 
-  if no_NW:
+  if hexagon.northwest_hexagon is None:# no_NW:
     nw_hexagon = hexagon.create_northwest_hexagon()
-    nw_hexagon.draw(screen)
+  else:
+    nw_hexagon = hexagon.northwest_hexagon
 
   # After all of the above is executed, all neighbor hexagon pointers of the
-  #  current hexagon are not None.
-  ne_hexagon.southeast_hexagon = e_hexagon
-  e_hexagon.northwest_hexagon = ne_hexagon
+  #  current hexagon are not None unless the created hexagon's center is out
+  #  of bounds.
+  NE = not hexagon.northeast_hexagon is None
+  E = not hexagon.east_hexagon is None
+  SE = not hexagon.southeast_hexagon is None
+  SW = not hexagon.southwest_hexagon is None
+  W = not hexagon.west_hexagon is None
+  NW = not hexagon.northwest_hexagon is None
+
+  if NE and E:
+    ne_hexagon.southeast_hexagon = e_hexagon
+    e_hexagon.northwest_hexagon = ne_hexagon
 
   # Connect east hexagon to the southeast hexagon.
-  e_hexagon.southwest_hexagon = se_hexagon
-  se_hexagon.northeast_hexagon = e_hexagon
+  if E and SE:
+    e_hexagon.southwest_hexagon = se_hexagon
+    se_hexagon.northeast_hexagon = e_hexagon
 
   # Connect southeast hexagon to the southwest hexagon.
-  se_hexagon.west_hexagon = sw_hexagon
-  sw_hexagon.east_hexagon = se_hexagon
+  if SE and SW:
+    se_hexagon.west_hexagon = sw_hexagon
+    sw_hexagon.east_hexagon = se_hexagon
 
   # Connect southwest hexagon to the west hexagon.
-  sw_hexagon.northwest_hexagon = w_hexagon
-  w_hexagon.southeast_hexagon = sw_hexagon
+  if SW and W:
+    sw_hexagon.northwest_hexagon = w_hexagon
+    w_hexagon.southeast_hexagon = sw_hexagon
 
   # Connect west hexagon to the northwest hexagon.
-  w_hexagon.northeast_hexagon = nw_hexagon
-  nw_hexagon.southwest_hexagon = w_hexagon
+  if W and NW:
+    w_hexagon.northeast_hexagon = nw_hexagon
+    nw_hexagon.southwest_hexagon = w_hexagon
 
   # Connect northwest hexagon to the north hexagon.
-  nw_hexagon.west_hexagon = ne_hexagon
-  ne_hexagon.east_hexagon = nw_hexagon
+  if NW and NE:
+    nw_hexagon.east_hexagon = ne_hexagon
+    ne_hexagon.west_hexagon = nw_hexagon
 
 
-def draw_all_hexagons(max_x, max_y, side_length, screen):
+def recursive_draw_eastern_hexagons(hexagon, screen, s):
+  if hexagon is None:
+    return
+
+  draw_hexagon_and_create_neighbors(hexagon, screen, s)
+  if not hexagon.northeast_vertex is None:
+    recursive_draw_eastern_hexagons(hexagon.northeast_hexagon, screen, s+"->NE")
+  if not hexagon.east_hexagon is None:
+    recursive_draw_eastern_hexagons(hexagon.east_hexagon, screen, s+"->E")
+  if not hexagon.southeast_hexagon is None:
+    recursive_draw_eastern_hexagons(hexagon.southeast_hexagon, screen, s+"->SE")
+
+
+def recursive_draw_western_hexagons(hexagon, screen, s):
+  if hexagon is None:
+    return
+
+  draw_hexagon_and_create_neighbors(hexagon, screen, s)
+  if not hexagon.southwest_hexagon is None:
+    recursive_draw_western_hexagons(hexagon.southwest_hexagon, screen, s+"->SW")
+  if not hexagon.west_hexagon is None:
+    recursive_draw_western_hexagons(hexagon.west_hexagon, screen, s+"->W")
+  if not hexagon.northwest_hexagon is None:
+    recursive_draw_western_hexagons(hexagon.northwest_hexagon, screen, s+"->NW")
+
+
+def recursive_draw_hexagons(hexagon, screen, s):
+
+  if not hexagon.northeast_vertex is None:
+    recursive_draw_hexagons(hexagon.northeast_hexagon, screen, s+"->NE")
+  if not hexagon.east_hexagon is None:
+    recursive_draw_hexagons(hexagon.east_hexagon, screen, s+"->E")
+  if not hexagon.northwest_hexagon is None:
+    recursive_draw_hexagons(hexagon.northwest_hexagon, screen, s+"->SE")
+
+
+def draw_all_hexagons(side_length, screen):
   initial_hex = Hexagon(
-    center=numpy.array([(max_x/2, max_y/2)]).T,
+    center=numpy.array([(MAX_X/2, MAX_Y/2)]).T,
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
-    side_length=100
+    side_length=side_length
   )
   initial_hex.draw(screen)
-
-  recursive_draw_hexagons(initial_hex, max_x, max_y, side_length, screen)
+  #recursive_draw_hexagons(initial_hex, screen, "INIT")
+  #recursive_draw_eastern_hexagons(initial_hex, screen, "INIT")
+  #recursive_draw_western_hexagons(initial_hex, screen, "INIT")
 
 
 if __name__ == "__main__":
@@ -273,9 +342,7 @@ if __name__ == "__main__":
   pygame.init()
   screen = pygame.display.set_mode((MAX_X, MAX_Y))
   draw_all_hexagons(
-    max_x=MAX_X,
-    max_y=MAX_Y,
-    side_length=100,
+    side_length=50,
     screen=screen
   )
 
