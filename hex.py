@@ -33,8 +33,9 @@ class Hexagon:
     # side_length := a scalar representing the length of any side of the
     #  resulting hexagon.
     self.center = center.copy()
-    self.north_dir = side_length * northern_most_unit_vector_direction
-    north = self.north_dir + self.center
+    self.north_unit_dir = northern_most_unit_vector_direction.copy()
+    scaled_north_dir = side_length * northern_most_unit_vector_direction
+    north = scaled_north_dir + self.center
 
     # From the center point and the north vertex, we can compute the other
     #  vertices of the hexagon. Each vertex, relative to the center, is
@@ -43,13 +44,13 @@ class Hexagon:
     sin_60_degrees = numpy.sin(pi_d_3)
     cos_60_degrees = numpy.cos(pi_d_3)
     rotate = numpy.matrix([
-      [cos_60_degrees, -sin_60_degrees],
-      [sin_60_degrees, cos_60_degrees],
+      [cos_60_degrees, sin_60_degrees],
+      [-sin_60_degrees, cos_60_degrees],
     ])
 
     # Perform this rotation five times to calculate the direction of all
     #  six hexagon vertices.
-    self.vertex_directions = [self.north_dir]
+    self.vertex_directions = [scaled_north_dir]
     self.vertices = [north]
     for i in range(5):
       prev_direction = self.vertex_directions[-1]
@@ -59,6 +60,13 @@ class Hexagon:
       # Calculate Cartesian coordinates of vertex.
       vertex = rotated_direction + self.center
       self.vertices.append(vertex)
+
+    self.north_dir,\
+    self.northeast_dir,\
+    self.southeast_dir,\
+    self.south_dir,\
+    self.southwest_dir,\
+    self.northwest_dir = self.vertex_directions
 
     self.north_vertex,\
     self.northeast_vertex,\
@@ -79,7 +87,9 @@ class Hexagon:
     self.neighboring_hexagons = []
 
 
-  def draw(self, screen, color=RANDOM_COLOR()):
+  def draw(self, screen, color=None):
+    if color is None:
+      color = RANDOM_COLOR()
     pygame.draw.polygon(
       screen,
       color,
@@ -87,7 +97,10 @@ class Hexagon:
     )
 
 
-  def draw_vertices(self, screen, color=RANDOM_COLOR()):
+  def draw_vertices(self, screen, color=None):
+    if color is None:
+      color = RANDOM_COLOR()
+
     map(
       lambda p: pygame.draw.circle(screen, color, p, 4),
       self.transform_points_for_pygame(self.vertices)
@@ -98,16 +111,17 @@ class Hexagon:
     return [(p[0], MAX_Y - p[1]) for p in points]
 
 
-def recursive_draw_hexagons(hexagon, max_x, max_y, side_length):
+def recursive_draw_hexagons(hexagon, max_x, max_y, side_length, screen):
   # Create all hexagons adjacent to the one passed in, and link them together
   #  relative to their topological relationship.
   if hexagon.to_northeast is None:
-    ne_center = hexagon.northeast_vertex + hexagon.north_dir
+    ne_center = hexagon.northeast_dir + hexagon.north_dir
     ne_hexagon = Hexagon(
-      center,
-      northern_most_unit_vector_direction,
+      center=ne_center,
+      northern_most_unit_vector_direction=hexagon.north_unit_dir,
       side_length=side_length
     )
+    ne_hexagon.draw(screen)
 
   if hexagon.to_east is None:
     pass
@@ -133,7 +147,7 @@ def draw_all_hexagons(max_x, max_y, side_length, screen):
   )
   initial_hex.draw(screen)
 
-  #recursive_draw_hexagons(initial_hex, max_x, max_y, side_length)
+  recursive_draw_hexagons(initial_hex, max_x, max_y, side_length, screen)
 
 
 if __name__ == "__main__":
