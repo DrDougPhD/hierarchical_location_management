@@ -112,7 +112,7 @@ class Hexagon:
     # The following member variables correspond to points to neighboring
     #  hexagons related to the topological relationship between this hexagon
     #  and neighboring hexagons.
-    self.neighboring_hexagons = [Hexagon() for i in range(6)]
+    self.neighboring_hexagons = [None for i in range(6)]
     self.northeast_hexagon,\
     self.east_hexagon,\
     self.southeast_hexagon,\
@@ -155,6 +155,9 @@ class Hexagon:
       northern_most_unit_vector_direction=self.north_unit_dir,
       side_length=self.side_length
     )
+
+    self.neighboring_hexagons[i] = hexagon
+    hexagon.neighboring_hexagons[(i-3)%self.number_of_sides] = self
     return hexagon
 
 
@@ -302,14 +305,44 @@ def recursive_draw_western_hexagons(hexagon, screen, s):
     recursive_draw_western_hexagons(hexagon.northwest_hexagon, screen, s+"->NW")
 
 
-def recursive_draw_hexagons(hexagon, screen, s):
+def recursive_draw_hexagons(hexagon, screen, recursive_index):
+  if recursive_index < 5:
+    new_hexagons = []
+    for i in range(hexagon.number_of_sides):
+      hexagons_along_current_side = []
+      for j in range(recursive_index):
+        neighbor = hexagon.create_neighbor(i)
+        neighbor.draw(screen)
+        hexagons_along_current_side.append(neighbor)
 
-  if not hexagon.northeast_vertex is None:
-    recursive_draw_hexagons(hexagon.northeast_hexagon, screen, s+"->NE")
-  if not hexagon.east_hexagon is None:
-    recursive_draw_hexagons(hexagon.east_hexagon, screen, s+"->E")
-  if not hexagon.northwest_hexagon is None:
-    recursive_draw_hexagons(hexagon.northwest_hexagon, screen, s+"->SE")
+      new_hexagons.append(hexagons_along_current_side)
+
+    if recursive_index == 1:
+      for i in range(hexagon.number_of_sides):
+        current_side = new_hexagons[i]
+        next_side = new_hexagons[hexagon.next_neighbor_index(i)]
+
+        last_hexagon_of_current_side = new_hexagons[i][-1]
+        first_hexagon_of_next_side = new_hexagons[
+          hexagon.next_neighbor_index(i)
+        ][0]
+
+        last_hexagon_of_current_side.neighboring_hexagons[(i+2)%6] =\
+            first_hexagon_of_next_side
+        first_hexagon_of_next_side.neighboring_hexagons[
+          hexagon.previous_neighbor_index(i)
+        ] = last_hexagon_of_current_side
+
+        h1 = hexagon.neighboring_hexagons[i]
+        h2 = hexagon.neighboring_hexagons[hexagon.next_neighbor_index(i)]
+
+
+  #if not hexagon.northeast_vertex is None:
+  #  recursive_draw_hexagons(hexagon.northeast_hexagon, screen, s+"->NE")
+  #if not hexagon.east_hexagon is None:
+  #  recursive_draw_hexagons(hexagon.east_hexagon, screen, s+"->E")
+  #if not hexagon.northwest_hexagon is None:
+  #  recursive_draw_hexagons(hexagon.northwest_hexagon, screen, s+"->SE")
 
 
 def draw_all_hexagons(side_length, screen):
@@ -319,7 +352,7 @@ def draw_all_hexagons(side_length, screen):
     side_length=side_length
   )
   initial_hex.draw(screen)
-  #recursive_draw_hexagons(initial_hex, screen, "INIT")
+  recursive_draw_hexagons(initial_hex, screen, 1)
   #recursive_draw_eastern_hexagons(initial_hex, screen, "INIT")
   #recursive_draw_western_hexagons(initial_hex, screen, "INIT")
 
