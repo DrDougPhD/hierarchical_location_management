@@ -306,14 +306,16 @@ def recursive_draw_western_hexagons(hexagon, screen, s):
 
 
 def recursive_draw_hexagons(hexagon, screen, recursive_index):
-  if recursive_index < 5:
+  reference_hexagon = hexagon
+  if recursive_index < 2:
     new_hexagons = []
     for i in range(hexagon.number_of_sides):
       hexagons_along_current_side = []
       for j in range(recursive_index):
-        neighbor = hexagon.create_neighbor(i)
+        neighbor = reference_hexagon.create_neighbor(i)
         neighbor.draw(screen)
         hexagons_along_current_side.append(neighbor)
+        reference_hexagon = reference_hexagon.neighboring_hexagons[(i+2)%6]
 
       new_hexagons.append(hexagons_along_current_side)
 
@@ -335,7 +337,7 @@ def recursive_draw_hexagons(hexagon, screen, recursive_index):
 
         h1 = hexagon.neighboring_hexagons[i]
         h2 = hexagon.neighboring_hexagons[hexagon.next_neighbor_index(i)]
-
+    recursive_draw_hexagons(hexagon.neighboring_hexagons[0], screen, recursive_index+1)
 
   #if not hexagon.northeast_vertex is None:
   #  recursive_draw_hexagons(hexagon.northeast_hexagon, screen, s+"->NE")
