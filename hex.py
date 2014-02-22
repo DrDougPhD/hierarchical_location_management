@@ -187,29 +187,61 @@ class Hexagon:
 def recursive_draw_hexagons(hexagon, max_x, max_y, side_length, screen):
   # Create all hexagons adjacent to the one passed in, and link them together
   #  relative to their topological relationship.
-  if hexagon.northeast_hexagon is None:
-    new_hexagon = hexagon.create_northeast_hexagon()
-    new_hexagon.draw(screen)
+  no_NE = hexagon.northeast_hexagon is None
+  no_E = hexagon.east_hexagon is None
+  no_SE = hexagon.southeast_hexagon is None
+  no_SW = hexagon.southwest_hexagon is None
+  no_W = hexagon.west_hexagon is None
+  no_NW = hexagon.northwest_hexagon is None
 
-  if hexagon.east_hexagon is None:
-    new_hexagon = hexagon.create_east_hexagon()
-    new_hexagon.draw(screen)
+  if no_NE:
+    ne_hexagon = hexagon.create_northeast_hexagon()
+    ne_hexagon.draw(screen)
 
-  if hexagon.southeast_hexagon is None:
-    new_hexagon = hexagon.create_southeast_hexagon()
-    new_hexagon.draw(screen)
+  if no_E:
+    e_hexagon = hexagon.create_east_hexagon()
+    e_hexagon.draw(screen)
 
-  if hexagon.southwest_hexagon is None:
-    new_hexagon = hexagon.create_southwest_hexagon()
-    new_hexagon.draw(screen)
+  if no_SE:
+    we_hexagon = hexagon.create_southeast_hexagon()
+    se_hexagon.draw(screen)
 
-  if hexagon.west_hexagon is None:
-    new_hexagon = hexagon.create_west_hexagon()
-    new_hexagon.draw(screen)
+  if no_SW:
+    sw_hexagon = hexagon.create_southwest_hexagon()
+    sw_hexagon.draw(screen)
 
-  if hexagon.northwest_hexagon is None:
-    new_hexagon = hexagon.create_northwest_hexagon()
-    new_hexagon.draw(screen)
+  if no_W:
+    w_hexagon = hexagon.create_west_hexagon()
+    w_hexagon.draw(screen)
+
+  if no_NW:
+    nw_hexagon = hexagon.create_northwest_hexagon()
+    nw_hexagon.draw(screen)
+
+  # After all of the above is executed, all neighbor hexagon pointers of the
+  #  current hexagon are not None.
+  ne_hexagon.southeast_hexagon = e_hexagon
+  e_hexagon.northwest_hexagon = ne_hexagon
+
+  # Connect east hexagon to the southeast hexagon.
+  e_hexagon.southwest_hexagon = se_hexagon
+  se_hexagon.northeast_hexagon = e_hexagon
+
+  # Connect southeast hexagon to the southwest hexagon.
+  se_hexagon.west_hexagon = sw_hexagon
+  sw_hexagon.east_hexagon = se_hexagon
+
+  # Connect southwest hexagon to the west hexagon.
+  sw_hexagon.northwest_hexagon = w_hexagon
+  w_hexagon.southeast_hexagon = sw_hexagon
+
+  # Connect west hexagon to the northwest hexagon.
+  w_hexagon.northeast_hexagon = nw_hexagon
+  nw_hexagon.southwest_hexagon = w_hexagon
+
+  # Connect northwest hexagon to the north hexagon.
+  nw_hexagon.west_hexagon = ne_hexagon
+  ne_hexagon.east_hexagon = nw_hexagon
 
 
 def draw_all_hexagons(max_x, max_y, side_length, screen):
