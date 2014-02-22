@@ -7,6 +7,8 @@ import random
 import time
 random.seed(time.time())
 
+MAX_X = 640
+MAX_Y = 480
 
 def RANDOM_COLOR():
   return [random.randint(0, 255) for i in range(3)]
@@ -55,13 +57,22 @@ class Hexagon:
 
 
   def draw(self, screen, color=RANDOM_COLOR()):
-    from pprint import pprint
-    pygame.draw.polygon(screen, color, self.vertices)
+    pygame.draw.polygon(
+      screen,
+      color,
+      self.transform_points_for_pygame(self.vertices)
+    )
 
 
   def draw_vertices(self, screen, color=RANDOM_COLOR()):
-    for p in self.vertices:
-      pygame.draw.circle(screen, color, p, 4)
+    map(
+      lambda p: pygame.draw.circle(screen, color, p, 4),
+      self.transform_points_for_pygame(self.vertices)
+    )
+
+
+  def transform_points_for_pygame(self, points):
+    return [(p[0], MAX_Y - p[1]) for p in points]
 
 
 def draw_all_hexagons(max_x, max_y, side_length):
@@ -82,17 +93,16 @@ if __name__ == "__main__":
   #  length of 45.
   import pygame
   import sys
-  MAX_X = 640
-  MAX_Y = 480
 
   pygame.init()
   screen = pygame.display.set_mode((MAX_X, MAX_Y))
   h = Hexagon(
-    center=(MAX_X/2, MAX_Y/2),
+    center=(0, 0), #(MAX_X/2, MAX_Y/2),
     northern_most_unit_vector_direction=(0, 1),
     side_length=100
   )
   h.draw(screen)
+  h.draw_vertices(screen)
 
   pygame.display.update()
   while True:
