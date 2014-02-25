@@ -8,8 +8,12 @@ import random
 import time
 random.seed(time.time())
 
-HEXAGONS_ALONG_X_AXIS = 40
-HEXAGONS_ALONG_Y_AXIS = 40
+Y_RES = 800
+
+# Make the x-resolution big enough to hold one hexagon with two sides aligned
+#  with the y-axis.
+X_RES = int(math.ceil(Y_RES*numpy.sin(numpy.pi/3)))
+
 
 def RANDOM_COLOR():
   return [random.randint(0, 255) for i in range(3)]
@@ -22,7 +26,7 @@ def is_column_vector(v):
 
 def is_within_frame(v):
   x, y = v
-  return 0 <= x <= MAX_X and 0 <= y <= MAX_Y
+  return 0 <= x <= X_RES and 0 <= y <= Y_RES
 
 
 class Hexagon:
@@ -32,7 +36,7 @@ class Hexagon:
   neighbor_index = {"NE": 0, "E": 1, "SE": 2, "SW": 3, "W": 4, "NW": 5}
   vertex_order = {"N": 0, "NE": 1, "SE": 2, "S": 3, "SW": 4, "NW": 5}
 
-  def __init__(self, center=None, northern_most_unit_vector_direction=None, side_length=None, screen=None):
+  def __init__(self, center=None, northern_most_unit_vector_direction=None, side_length=None):
     # The Hexagon class is a representation of a 2D planar hexagon,
     #  represented in Cartesian coordinates of the center and all vertices.
     #
@@ -52,8 +56,6 @@ class Hexagon:
       self.initialized = True
     else:
       self.initialized = False
-
-    self.screen = screen
 
 
   def set(self, center, northern_most_unit_vector_direction, side_length):
@@ -124,29 +126,29 @@ class Hexagon:
     self.northwest_hexagon = self.neighboring_hexagons
 
 
-  def draw(self, screen, color=None):
+  def draw(self, color=None):
     if self.initialized:
       if color is None:
         color = RANDOM_COLOR()
       pygame.draw.polygon(
-        self.screen,
+        pygame.display.get_surface(),
         color,
         self.transform_points_for_pygame(self.vertices)
       )
 
 
-  def draw_vertices(self, screen, color=None):
+  def draw_vertices(self, color=None):
     if self.initialized:
       if color is None:
         color = RANDOM_COLOR()
       map(
-        lambda p: pygame.draw.circle(self.screen, color, p, 4),
+        lambda p: pygame.draw.circle(pygame.display.get_surface(), color, p, 4),
         self.transform_points_for_pygame(self.vertices)
       )
 
 
   def transform_points_for_pygame(self, points):
-    return [(p[0], MAX_Y - p[1]) for p in points]
+    return [(p[0], Y_RES - p[1]) for p in points]
 
 
   def create_neighbor(self, i):
@@ -231,14 +233,43 @@ class Hexagon:
     self.set_neighbor(neighbor, 5)
 
 
-def draw_all_hexagons(side_length, screen):
+def draw_all_hexagons(center, side_length, screen):
+  center_point = numpy.array([(center)]).T
   # Create all hexagons within the viewing window.
-  previous_hexagon = Hexagon(
-    center=numpy.array([(0, 0)]).T,
+  root_hexagon = Hexagon(
+    center=center_point,
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
-    side_length=side_length,
-    screen=screen
+    side_length=side_length
   )
+  root_hexagon.draw()
+
+  # Compute the north direction of the hexagons that will be under the root
+  #  hexagon.
+  pi_d_3 = numpy.pi/3
+  sin_60_degrees = numpy.sin(pi_d_3)
+  cos_60_degrees = numpy.cos(pi_d_3)
+  rotate_60 = numpy.matrix([
+    [cos_60_degrees, sin_60_degrees],
+    [-sin_60_degrees, cos_60_degrees],
+  ])
+
+  I_2 = numpy.matrix([
+    [1, 0],
+    [0, 1]
+  ])
+
+  M = 2*rotate_60 + I_2
+  new_north_direction = M.I*root_hexagon.northeast_dir
+  new_side_length = numpy.linalg.norm(new_north_direction)
+  north_unit_vector = new_north_direction/new_side_length
+
+  internal_center_hexagon = Hexagon(
+    center=center_point,
+    northern_most_unit_vector_direction=north_unit_vector,
+    side_length=new_side_length
+  )
+  internal_center_hexagon.draw()
+  """
   first_hexagon = previous_hexagon
   hexagon_matrix = []
   for y in range(HEXAGONS_ALONG_Y_AXIS):
@@ -280,7 +311,7 @@ def draw_all_hexagons(side_length, screen):
       else:
         current_row[x].set_northeast_neighbor(above_row[x+1])
 
-  
+  """
   #recursive_draw_eastern_hexagons(initial_hex, screen, "INIT")
   #recursive_draw_western_hexagons(initial_hex, screen, "INIT")
 
@@ -299,15 +330,11 @@ if __name__ == "__main__":
   #  length of 45.
   import pygame
   import sys
-  side_length = 10
-  
-  MAX_X = int(math.ceil(2*numpy.sin(numpy.pi/3)*side_length*(HEXAGONS_ALONG_X_AXIS-1)))
-  MAX_Y = int(math.ceil(1.5*side_length*(HEXAGONS_ALONG_Y_AXIS-1)))
-  print("Screen size: ({0}, {1})".format(MAX_X, MAX_Y))
   pygame.init()
-  screen = pygame.display.set_mode((MAX_X, MAX_Y))
+  screen = pygame.display.set_mode((X_RES, Y_RES))
   draw_all_hexagons(
-    side_length=side_length,
+    center=(X_RES/2, Y_RES/2),
+    side_length=Y_RES/2,
     screen=screen
   )
 
