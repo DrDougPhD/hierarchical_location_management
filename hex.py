@@ -116,13 +116,24 @@ class Hexagon:
     # The following member variables correspond to points to neighboring
     #  hexagons related to the topological relationship between this hexagon
     #  and neighboring hexagons.
-    self.neighboring_hexagons = [None for i in range(6)]
+    self.neighboring_hexagons = [Hexagon() for i in range(6)]
     self.northeast_hexagon,\
     self.east_hexagon,\
     self.southeast_hexagon,\
     self.southwest_hexagon,\
     self.west_hexagon,\
     self.northwest_hexagon = self.neighboring_hexagons
+
+    self.internal_hexagons = [Hexagon() for i in range(7)]
+    self.north_internal_hex,\
+    self.northeast_internal_hex,\
+    self.southeast_internal_hex,\
+    self.south_internal_hex,\
+    self.southwest_internal_hex,\
+    self.northwest_internal_hex,\
+    self.center_internal_hex = self.internal_hexagons
+
+    self.parent = None
 
 
   def draw(self, color=None):
@@ -169,13 +180,13 @@ class Hexagon:
       northern_most_unit_vector_direction=north_unit_vector,
       side_length=new_side_length
     )
-    self.internal_hexagons = []
+    internal_center_hexagon.parent = self
     for i in range(self.number_of_sides):
-      self.internal_hexagons.append(
-        internal_center_hexagon.create_neighbor(i)
-      )
+      self.internal_hexagons[i] = internal_center_hexagon.create_neighbor(i)
+      self.internal_hexagons[i].parent = self
 
-    self.internal_hexagons.append(internal_center_hexagon)
+
+    self.internal_hexagons[-1] = internal_center_hexagon
     return self.internal_hexagons
 
 
