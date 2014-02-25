@@ -61,7 +61,6 @@ class Hexagon:
        northern_most_unit_vector_direction is not None and\
        side_length is not None:
       self.set(center, northern_most_unit_vector_direction, side_length, parent)
-      self.initialized = True
     else:
       self.initialized = False
       self.parent = parent
@@ -79,6 +78,7 @@ class Hexagon:
     #
     # side_length := a scalar representing the length of any side of the
     #  resulting hexagon.
+    self.initialized = True
     self.center = center.copy()
     self.north_unit_dir = northern_most_unit_vector_direction.copy()
     self.side_length = side_length
@@ -126,7 +126,7 @@ class Hexagon:
     self.west_hexagon,\
     self.northwest_hexagon = self.neighboring_hexagons
 
-    self.internal_hexagons = [Hexagon() for i in range(7)]
+    self.internal_hexagons = [Hexagon(parent=self) for i in range(7)]
     self.north_internal_hex,\
     self.northeast_internal_hex,\
     self.southeast_internal_hex,\
@@ -194,18 +194,27 @@ class Hexagon:
       parent=self
     )
     for i in range(self.number_of_sides):
-      self.internal_hexagons[i] = internal_center_hexagon.create_neighbor(i)
-      self.internal_hexagons[i].parent = self
+      center = internal_center_hexagon.get_center_point_of_neighbor(i)
+      self.internal_hexagons[i].set(
+        center=center,
+        northern_most_unit_vector_direction=north_unit_vector,
+        side_length=new_side_length,
+        parent=self
+      )
 
-
-    self.internal_hexagons[-1] = internal_center_hexagon
+    # Set the center hexagon.
+    self.internal_hexagons[-1].set(
+      center=self.center,
+      northern_most_unit_vector_direction=north_unit_vector,
+      side_length=new_side_length,
+      parent=self
+    )
     return self.internal_hexagons
 
 
   def create_neighbor(self, i):
     # Create the neighbor of this hexagon according to the neighbor index.
-    center = self.center + self.vertex_directions[i] +\
-             self.vertex_directions[self.next_neighbor_index(i)]
+    center = self.get_center_point_of_neighbor(i)
     hexagon = Hexagon(
       center=center,
       northern_most_unit_vector_direction=self.north_unit_dir,
@@ -214,6 +223,11 @@ class Hexagon:
 
     self.set_neighbor(hexagon, i)
     return hexagon
+
+
+  def get_center_point_of_neighbor(self, i):
+    return self.center + self.vertex_directions[i] +\
+           self.vertex_directions[self.next_neighbor_index(i)]
 
 
   def previous_neighbor_index(self, i):
@@ -292,8 +306,23 @@ def draw_all_hexagons(center, side_length):
     side_length=side_length
   )
   root_hexagon.draw()
-  internal_hexagons = root_hexagon.create_internal_hexagons()
-  for h in internal_hexagons:
+  level_1_hexagons = root_hexagon.create_internal_hexagons()
+  level_2_hexagons = []
+  for h in level_1_hexagons:
+    h.draw()
+    level_2_hexagons.extend(h.create_internal_hexagons())
+
+  level_3_hexagons = []
+  for h in level_2_hexagons:
+    h.draw()
+    level_3_hexagons.extend(h.create_internal_hexagons())
+
+  level_4_hexagons = []
+  for h in level_3_hexagons:
+    h.draw()
+    level_4_hexagons.extend(h.create_internal_hexagons())
+
+  for h in level_4_hexagons:
     h.draw()
 
   """
