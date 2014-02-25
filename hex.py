@@ -325,52 +325,6 @@ def draw_all_hexagons(center, side_length):
   for h in level_4_hexagons:
     h.draw()
 
-  """
-  first_hexagon = previous_hexagon
-  hexagon_matrix = []
-  for y in range(HEXAGONS_ALONG_Y_AXIS):
-    hexagon_row = []
-    for x in range(HEXAGONS_ALONG_X_AXIS-1):
-      previous_hexagon.draw(screen)
-      new_hexagon = previous_hexagon.create_east_hexagon()
-      hexagon_row.append(previous_hexagon)
-      previous_hexagon = new_hexagon
-
-    previous_hexagon.draw(screen)
-    hexagon_row.append(previous_hexagon)
-    hexagon_matrix.append(hexagon_row)
-
-    if y != HEXAGONS_ALONG_Y_AXIS-1:
-      even_row = y % 2 == 0
-      if even_row:
-        first_hexagon = previous_hexagon = first_hexagon.create_northeast_hexagon()
-      else:
-        first_hexagon = previous_hexagon = first_hexagon.create_northwest_hexagon()
-
-  # Connect each hexagon together.
-  for y in range(HEXAGONS_ALONG_Y_AXIS-1):
-    current_row = hexagon_matrix[y]
-    above_row = hexagon_matrix[y+1]
-
-    for x in range(HEXAGONS_ALONG_X_AXIS):
-      lower_hex = current_row[x]
-      upper_hex = above_row[x]
-      even_row = y%2 == 0
-      if even_row:
-        lower_hex.set_northeast_neighbor(upper_hex)
-      else:
-        lower_hex.set_northwest_neighbor(upper_hex)
-
-    for x in range(HEXAGONS_ALONG_X_AXIS-1):
-      if even_row:
-        current_row[x+1].set_northwest_neighbor(above_row[x])
-      else:
-        current_row[x].set_northeast_neighbor(above_row[x+1])
-
-  """
-  #recursive_draw_eastern_hexagons(initial_hex, screen, "INIT")
-  #recursive_draw_western_hexagons(initial_hex, screen, "INIT")
-
 
 if __name__ == "__main__":
   # Pygame requires integers for drawing coordinates, not real values.
