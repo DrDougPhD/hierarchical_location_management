@@ -28,6 +28,13 @@ def is_within_frame(v):
   x, y = v
   return 0 <= x <= X_RES and 0 <= y <= Y_RES
 
+pi_d_3 = numpy.pi/3
+sin_60_degrees = numpy.sin(pi_d_3)
+cos_60_degrees = numpy.cos(pi_d_3)
+rotate_60 = numpy.matrix([
+      [cos_60_degrees, sin_60_degrees],
+      [-sin_60_degrees, cos_60_degrees],
+])
 
 class Hexagon:
   number_of_sides = 6
@@ -79,21 +86,13 @@ class Hexagon:
     # From the center point and the north vertex, we can compute the other
     #  vertices of the hexagon. Each vertex, relative to the center, is
     #  simply the previous vector rotated by 60 degrees (pi/3 radians).
-    pi_d_3 = numpy.pi/3
-    sin_60_degrees = numpy.sin(pi_d_3)
-    cos_60_degrees = numpy.cos(pi_d_3)
-    rotate = numpy.matrix([
-      [cos_60_degrees, sin_60_degrees],
-      [-sin_60_degrees, cos_60_degrees],
-    ])
-
     # Perform this rotation five times to calculate the direction of all
     #  six hexagon vertices.
     self.vertex_directions = [scaled_north_dir]
     self.vertices = [north]
     for i in range(5):
       prev_direction = self.vertex_directions[-1]
-      rotated_direction = rotate * prev_direction
+      rotated_direction = rotate_60 * prev_direction
       self.vertex_directions.append(rotated_direction)
 
       # Calculate Cartesian coordinates of vertex.
@@ -151,6 +150,35 @@ class Hexagon:
     return [(p[0], Y_RES - p[1]) for p in points]
 
 
+  def create_internal_hexagons(self):
+    pass
+    # Compute the north direction of the hexagons that will be under the root
+    #  hexagon.
+    I_2 = numpy.matrix([
+      [1, 0],
+      [0, 1]
+    ])
+
+    M = 2*rotate_60 + I_2
+    new_north_direction = M.I*self.northeast_dir
+    new_side_length = numpy.linalg.norm(new_north_direction)
+    north_unit_vector = new_north_direction/new_side_length
+
+    internal_center_hexagon = Hexagon(
+      center=self.center,
+      northern_most_unit_vector_direction=north_unit_vector,
+      side_length=new_side_length
+    )
+    self.internal_hexagons = []
+    for i in range(self.number_of_sides):
+      self.internal_hexagons.append(
+        internal_center_hexagon.create_neighbor(i)
+      )
+
+    self.internal_hexagons.append(internal_center_hexagon)
+    return self.internal_hexagons
+
+
   def create_neighbor(self, i):
     # Create the neighbor of this hexagon according to the neighbor index.
     center = self.center + self.vertex_directions[i] +\
@@ -159,7 +187,6 @@ class Hexagon:
       center=center,
       northern_most_unit_vector_direction=self.north_unit_dir,
       side_length=self.side_length,
-      screen=self.screen
     )
 
     self.set_neighbor(hexagon, i)
@@ -233,7 +260,7 @@ class Hexagon:
     self.set_neighbor(neighbor, 5)
 
 
-def draw_all_hexagons(center, side_length, screen):
+def draw_all_hexagons(center, side_length):
   center_point = numpy.array([(center)]).T
   # Create all hexagons within the viewing window.
   root_hexagon = Hexagon(
@@ -242,33 +269,10 @@ def draw_all_hexagons(center, side_length, screen):
     side_length=side_length
   )
   root_hexagon.draw()
+  internal_hexagons = root_hexagon.create_internal_hexagons()
+  for h in internal_hexagons:
+    h.draw()
 
-  # Compute the north direction of the hexagons that will be under the root
-  #  hexagon.
-  pi_d_3 = numpy.pi/3
-  sin_60_degrees = numpy.sin(pi_d_3)
-  cos_60_degrees = numpy.cos(pi_d_3)
-  rotate_60 = numpy.matrix([
-    [cos_60_degrees, sin_60_degrees],
-    [-sin_60_degrees, cos_60_degrees],
-  ])
-
-  I_2 = numpy.matrix([
-    [1, 0],
-    [0, 1]
-  ])
-
-  M = 2*rotate_60 + I_2
-  new_north_direction = M.I*root_hexagon.northeast_dir
-  new_side_length = numpy.linalg.norm(new_north_direction)
-  north_unit_vector = new_north_direction/new_side_length
-
-  internal_center_hexagon = Hexagon(
-    center=center_point,
-    northern_most_unit_vector_direction=north_unit_vector,
-    side_length=new_side_length
-  )
-  internal_center_hexagon.draw()
   """
   first_hexagon = previous_hexagon
   hexagon_matrix = []
@@ -334,8 +338,7 @@ if __name__ == "__main__":
   screen = pygame.display.set_mode((X_RES, Y_RES))
   draw_all_hexagons(
     center=(X_RES/2, Y_RES/2),
-    side_length=Y_RES/2,
-    screen=screen
+    side_length=Y_RES/2
   )
 
   pygame.display.update()
