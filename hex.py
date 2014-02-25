@@ -43,7 +43,8 @@ class Hexagon:
   neighbor_index = {"NE": 0, "E": 1, "SE": 2, "SW": 3, "W": 4, "NW": 5}
   vertex_order = {"N": 0, "NE": 1, "SE": 2, "S": 3, "SW": 4, "NW": 5}
 
-  def __init__(self, center=None, northern_most_unit_vector_direction=None, side_length=None):
+  def __init__(self, center=None, northern_most_unit_vector_direction=None,
+               side_length=None, parent=None):
     # The Hexagon class is a representation of a 2D planar hexagon,
     #  represented in Cartesian coordinates of the center and all vertices.
     #
@@ -59,13 +60,14 @@ class Hexagon:
     if center is not None and\
        northern_most_unit_vector_direction is not None and\
        side_length is not None:
-      self.set(center, northern_most_unit_vector_direction, side_length)
+      self.set(center, northern_most_unit_vector_direction, side_length, parent)
       self.initialized = True
     else:
       self.initialized = False
+      self.parent = parent
 
 
-  def set(self, center, northern_most_unit_vector_direction, side_length):
+  def set(self, center, northern_most_unit_vector_direction, side_length, parent):
     # The Hexagon class is a representation of a 2D planar hexagon,
     #  represented in Cartesian coordinates of the center and all vertices.
     #
@@ -133,7 +135,17 @@ class Hexagon:
     self.northwest_internal_hex,\
     self.center_internal_hex = self.internal_hexagons
 
-    self.parent = None
+    self.parent = parent
+
+
+  def copy(self, hexagon):
+    # Copy constructor.
+    self.set(
+      center=hexagon.center,
+      northern_most_unit_vector_direction=hexagon.north_unit_dir,
+      side_length=hexagon.side_length,
+      parent=hexagon.parent
+    )
 
 
   def draw(self, color=None):
@@ -178,9 +190,9 @@ class Hexagon:
     internal_center_hexagon = Hexagon(
       center=self.center,
       northern_most_unit_vector_direction=north_unit_vector,
-      side_length=new_side_length
+      side_length=new_side_length,
+      parent=self
     )
-    internal_center_hexagon.parent = self
     for i in range(self.number_of_sides):
       self.internal_hexagons[i] = internal_center_hexagon.create_neighbor(i)
       self.internal_hexagons[i].parent = self
