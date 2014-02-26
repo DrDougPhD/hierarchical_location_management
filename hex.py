@@ -152,14 +152,15 @@ class Hexagon:
     )
 
 
-  def draw(self, color=None):
+  def draw(self, color=None, width=0):
     if self.initialized:
       if color is None:
         color = RANDOM_COLOR()
       pygame.draw.polygon(
         pygame.display.get_surface(),
         color,
-        self.transform_points_for_pygame(self.vertices)
+        self.transform_points_for_pygame(self.vertices),
+        width
       )
 
 
@@ -322,18 +323,20 @@ def draw_all_hexagons(center, side_length):
     h.draw()
     level_2_hexagons.extend(h.create_internal_hexagons())
 
-  level_3_hexagons = []
   for h in level_2_hexagons:
     h.draw()
-    level_3_hexagons.extend(h.create_internal_hexagons())
 
-  #level_4_hexagons = []
-  #for h in level_3_hexagons:
-  #  h.draw()
-  #  level_4_hexagons.extend(h.create_internal_hexagons())
+  for h in level_2_hexagons:
+    h.draw(color=(0,0,0), width=1)
+  for h in level_1_hexagons:
+    h.draw(color=(0,0,0), width=1)
 
-  #for h in level_4_hexagons:
-  #  h.draw()
+  hexagons = [
+    [root_hexagon],
+    level_1_hexagons,
+    level_2_hexagons
+  ]
+  return hexagons
 
 
 if __name__ == "__main__":
@@ -352,16 +355,42 @@ if __name__ == "__main__":
   import sys
   pygame.init()
   screen = pygame.display.set_mode((X_RES, Y_RES))
-  draw_all_hexagons(
+  hexagons = draw_all_hexagons(
     center=(X_RES/2, Y_RES/2),
     side_length=Y_RES/2
   )
 
   pygame.display.update()
+  current_depth = len(hexagons)-1
   while True:
     for event in pygame.event.get(): 
       if event.type == pygame.QUIT: 
         sys.exit(0) 
+      elif event.type == pygame.KEYDOWN:
+        # If the Minus key is pressed, interpret this as the user wants to
+        #  visualize the the depth that is above the currently displayed depth.
+        #  In other words, if current depth = i, display depth i-1.
+        if event.key == pygame.K_MINUS:
+          print("GO UP ONE LEVEL")
+          if current_depth > 0:
+            current_depth -= 1
+            print("Current depth: {0}".format(current_depth))
+            for h in hexagons[current_depth]:
+              h.draw()
+            for h in hexagons[current_depth]:
+              h.draw(color=(0,0,0), width=2)
+
+        elif event.key == pygame.K_EQUALS:
+          if current_depth < len(hexagons)-1:
+            current_depth += 1
+            print("Current depth: {0}".format(current_depth))
+            for h in hexagons[current_depth]:
+              h.draw()
+            for h in hexagons[current_depth]:
+              h.draw(color=(0,0,0), width=2)
+
+          print("GO DOWN ONE LEVEL")
+
+        pygame.display.update()
       else:
         print(event)
-
