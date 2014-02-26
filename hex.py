@@ -349,6 +349,16 @@ class Phone(pygame.sprite.Sprite):
     print(self.rect)
 
 
+  def update(self):
+      x, y = self.rect.topleft
+      self.rect.topleft = (x+5*self.offset[0], y+5*self.offset[1])
+      self.offset = (0,0)
+
+
+  def move_by(self, offset_vector):
+    self.offset = offset_vector
+
+
 if __name__ == "__main__":
   # Pygame requires integers for drawing coordinates, not real values.
   #  Hexagons have a lot of sqrt(3) in their calculations since they are
@@ -371,6 +381,8 @@ if __name__ == "__main__":
   )
   phone = Phone()
   screen.blit(phone.image, phone.rect)
+
+  phones = pygame.sprite.RenderUpdates(phone)
 
   pygame.display.update()
   current_depth = len(hexagons)-1
@@ -403,9 +415,19 @@ if __name__ == "__main__":
 
           print("GO DOWN ONE LEVEL")
 
-        #phones.update()
-        #phones.draw(screen)
-        screen.blit(phone.image, phone.rect)
+        elif event.key == pygame.K_UP:
+          phone.move_by((0, -1)) # UP is actually down.
+        elif event.key == pygame.K_DOWN:
+          phone.move_by((0, 1))  # DOWN is actually up.
+        elif event.key == pygame.K_RIGHT:
+          phone.move_by((1, 0))
+        elif event.key == pygame.K_LEFT:
+          phone.move_by((-1, 0))
+
+        # Need a better way to update this.
+        #screen.fill((127, 127, 127))
+        phones.update()
+        phones.draw(screen)
         pygame.display.update()
       else:
         print(event)
