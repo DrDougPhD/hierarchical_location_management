@@ -6,6 +6,7 @@ import numpy
 import math
 import random
 import time
+import pygame
 random.seed(time.time())
 
 Y_RES = 800
@@ -339,6 +340,15 @@ def draw_all_hexagons(center, side_length):
   return hexagons
 
 
+class Phone(pygame.sprite.Sprite):
+  def __init__(self):
+    pygame.sprite.Sprite.__init__(self)
+    self.image = pygame.image.load("phone.png").convert_alpha()
+    self.rect = self.image.get_rect()
+    self.rect.topleft = (10,10)
+    print(self.rect)
+
+
 if __name__ == "__main__":
   # Pygame requires integers for drawing coordinates, not real values.
   #  Hexagons have a lot of sqrt(3) in their calculations since they are
@@ -351,14 +361,16 @@ if __name__ == "__main__":
   #  the length of side a equal to 26, and the length of side b equal to 45.
   #  This results in the hexagon composed of these triangles having a side
   #  length of 45.
-  import pygame
   import sys
   pygame.init()
   screen = pygame.display.set_mode((X_RES, Y_RES))
+  screen.fill((127, 127, 127))
   hexagons = draw_all_hexagons(
     center=(X_RES/2, Y_RES/2),
     side_length=Y_RES/2
   )
+  phone = Phone()
+  screen.blit(phone.image, phone.rect)
 
   pygame.display.update()
   current_depth = len(hexagons)-1
@@ -391,6 +403,9 @@ if __name__ == "__main__":
 
           print("GO DOWN ONE LEVEL")
 
+        #phones.update()
+        #phones.draw(screen)
+        screen.blit(phone.image, phone.rect)
         pygame.display.update()
       else:
         print(event)
