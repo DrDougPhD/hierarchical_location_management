@@ -36,6 +36,7 @@ rotate_60 = numpy.matrix([
       [-sin_60_degrees, cos_60_degrees],
 ])
 
+
 class Hexagon:
   number_of_sides = 6
   neighbor_order = ["NE", "E", "SE", "SW", "W", "NW"]
@@ -44,7 +45,7 @@ class Hexagon:
   vertex_order = {"N": 0, "NE": 1, "SE": 2, "S": 3, "SW": 4, "NW": 5}
 
   def __init__(self, center=None, northern_most_unit_vector_direction=None,
-               side_length=None, parent=None):
+               side_length=None, parent=None, depth=0):
     # The Hexagon class is a representation of a 2D planar hexagon,
     #  represented in Cartesian coordinates of the center and all vertices.
     #
@@ -60,13 +61,14 @@ class Hexagon:
     if center is not None and\
        northern_most_unit_vector_direction is not None and\
        side_length is not None:
-      self.set(center, northern_most_unit_vector_direction, side_length, parent)
+      self.set(center, northern_most_unit_vector_direction, side_length, parent, depth)
     else:
       self.initialized = False
       self.parent = parent
+      self.depth = depth
 
 
-  def set(self, center, northern_most_unit_vector_direction, side_length, parent):
+  def set(self, center, northern_most_unit_vector_direction, side_length, parent, depth=None):
     # The Hexagon class is a representation of a 2D planar hexagon,
     #  represented in Cartesian coordinates of the center and all vertices.
     #
@@ -79,6 +81,8 @@ class Hexagon:
     # side_length := a scalar representing the length of any side of the
     #  resulting hexagon.
     self.initialized = True
+    if depth is not None:
+      self.depth = depth
     self.center = center.copy()
     self.north_unit_dir = northern_most_unit_vector_direction.copy()
     self.side_length = side_length
@@ -118,7 +122,7 @@ class Hexagon:
     # The following member variables correspond to points to neighboring
     #  hexagons related to the topological relationship between this hexagon
     #  and neighboring hexagons.
-    self.neighboring_hexagons = [Hexagon() for i in range(6)]
+    self.neighboring_hexagons = [Hexagon(depth=self.depth) for i in range(6)]
     self.northeast_hexagon,\
     self.east_hexagon,\
     self.southeast_hexagon,\
@@ -126,7 +130,7 @@ class Hexagon:
     self.west_hexagon,\
     self.northwest_hexagon = self.neighboring_hexagons
 
-    self.internal_hexagons = [Hexagon(parent=self) for i in range(7)]
+    self.internal_hexagons = [Hexagon(parent=self, depth=self.depth+1) for i in range(7)]
     self.north_internal_hex,\
     self.northeast_internal_hex,\
     self.southeast_internal_hex,\
@@ -174,7 +178,6 @@ class Hexagon:
 
 
   def create_internal_hexagons(self):
-    pass
     # Compute the north direction of the hexagons that will be under the root
     #  hexagon.
     I_2 = numpy.matrix([
@@ -185,13 +188,19 @@ class Hexagon:
     M = 2*rotate_60 + I_2
     new_north_direction = M.I*self.northeast_dir
     new_side_length = numpy.linalg.norm(new_north_direction)
-    north_unit_vector = new_north_direction/new_side_length
+
+    if (self.depth+1)%2 == 0:
+      north_unit_vector = numpy.array([(0, 1)]).T
+
+    else:
+      north_unit_vector = new_north_direction/new_side_length
 
     internal_center_hexagon = Hexagon(
       center=self.center,
       northern_most_unit_vector_direction=north_unit_vector,
       side_length=new_side_length,
-      parent=self
+      parent=self,
+      depth=self.depth+1
     )
     for i in range(self.number_of_sides):
       center = internal_center_hexagon.get_center_point_of_neighbor(i)
@@ -199,7 +208,8 @@ class Hexagon:
         center=center,
         northern_most_unit_vector_direction=north_unit_vector,
         side_length=new_side_length,
-        parent=self
+        parent=self,
+        depth=self.depth+1
       )
 
     # Set the center hexagon.
@@ -317,13 +327,13 @@ def draw_all_hexagons(center, side_length):
     h.draw()
     level_3_hexagons.extend(h.create_internal_hexagons())
 
-  level_4_hexagons = []
-  for h in level_3_hexagons:
-    h.draw()
-    level_4_hexagons.extend(h.create_internal_hexagons())
+  #level_4_hexagons = []
+  #for h in level_3_hexagons:
+  #  h.draw()
+  #  level_4_hexagons.extend(h.create_internal_hexagons())
 
-  for h in level_4_hexagons:
-    h.draw()
+  #for h in level_4_hexagons:
+  #  h.draw()
 
 
 if __name__ == "__main__":
