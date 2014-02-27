@@ -45,7 +45,7 @@ class Hexagon:
   vertex_order = {"N": 0, "NE": 1, "SE": 2, "S": 3, "SW": 4, "NW": 5}
 
   def __init__(self, center=None, northern_most_unit_vector_direction=None,
-               side_length=None, parent=None, depth=0):
+               side_length=None, parent=None, depth=0, color=None):
     # The Hexagon class is a representation of a 2D planar hexagon,
     #  represented in Cartesian coordinates of the center and all vertices.
     #
@@ -65,6 +65,8 @@ class Hexagon:
       self.initialized = False
       self.parent = parent
       self.depth = depth
+
+    self.color = color if color is not None else RANDOM_COLOR()
 
 
   def set(self, center, northern_most_unit_vector_direction, side_length, parent, depth=None):
@@ -154,7 +156,7 @@ class Hexagon:
   def draw(self, color=None, width=0):
     if self.initialized:
       if color is None:
-        color = RANDOM_COLOR()
+        color = self.color
       pygame.draw.polygon(
         pygame.display.get_surface(),
         color,
@@ -166,7 +168,7 @@ class Hexagon:
   def draw_vertices(self, color=None):
     if self.initialized:
       if color is None:
-        color = RANDOM_COLOR()
+        color = self.color
       map(
         lambda p: pygame.draw.circle(pygame.display.get_surface(), color, p, 4),
         self.transform_points_for_pygame(self.vertices)
@@ -339,6 +341,7 @@ def draw_all_hexagons(center, side_length):
 
 
 class Phone(pygame.sprite.Sprite):
+  movement_offset = 10
   def __init__(self):
     pygame.sprite.Sprite.__init__(self)
     self.image = pygame.image.load("phone.png").convert_alpha()
@@ -350,9 +353,12 @@ class Phone(pygame.sprite.Sprite):
 
 
   def update(self):
-      x, y = self.rect.topleft
-      self.rect.topleft = (x+5*self.offset[0], y+5*self.offset[1])
-      self.offset = (0,0)
+    x, y = self.rect.topleft
+    self.rect.topleft = (
+      x+self.movement_offset*self.offset[0],
+      y+self.movement_offset*self.offset[1]
+    )
+    self.offset = (0,0)
 
 
   def move_by(self, offset_vector):
