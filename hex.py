@@ -37,7 +37,7 @@ rotate_60 = numpy.matrix([
       [-sin_60_degrees, cos_60_degrees],
 ])
 
-class Hexagon(pygame.sprite.Sprite):
+class Hexagon:
   number_of_sides = 6
   neighbor_order = ["NE", "E", "SE", "SW", "W", "NW"]
   vertex_order = ["N", "NE", "SE", "S", "SW", "NW"]
@@ -57,7 +57,6 @@ class Hexagon(pygame.sprite.Sprite):
     #
     # side_length := a scalar representing the length of any side of the
     #  resulting hexagon.
-    pygame.sprite.Sprite.__init__(self)
     if center is not None and\
        northern_most_unit_vector_direction is not None and\
        side_length is not None:
@@ -140,12 +139,6 @@ class Hexagon(pygame.sprite.Sprite):
     self.center_internal_hex = self.internal_hexagons
 
     self.parent = parent
-
-    left = float(min(self.vertices, key=lambda v: float(v[0]))[0])
-    top = float(min(self.transform_points_for_pygame(self.vertices), key=lambda v: float(v[1]))[1])
-    width = 2*(float(self.center[0]) - left)
-    height = 2*(float(self.transform_points_for_pygame([self.center])[0][1]) - top)
-    self.rect = pygame.Rect(left, top, width, height)
 
 
   def copy(self, hexagon):
@@ -382,6 +375,7 @@ if __name__ == "__main__":
   pygame.init()
   screen = pygame.display.set_mode((X_RES, Y_RES))
   screen.fill((127, 127, 127))
+
   hexagons = draw_all_hexagons(
     center=(X_RES/2, Y_RES/2),
     side_length=Y_RES/2
@@ -393,46 +387,44 @@ if __name__ == "__main__":
 
   pygame.display.update()
   current_depth = len(hexagons)-1
+  current_depth_hexagons = hexagons[current_depth]
   while True:
     for event in pygame.event.get(): 
       if event.type == pygame.QUIT: 
         sys.exit(0) 
       elif event.type == pygame.KEYDOWN:
+        screen.fill((127, 127, 127))
+
         # If the Minus key is pressed, interpret this as the user wants to
         #  visualize the the depth that is above the currently displayed depth.
         #  In other words, if current depth = i, display depth i-1.
         if event.key == pygame.K_MINUS:
-          print("GO UP ONE LEVEL")
           if current_depth > 0:
             current_depth -= 1
-            print("Current depth: {0}".format(current_depth))
-            for h in hexagons[current_depth]:
-              h.draw()
-            for h in hexagons[current_depth]:
-              h.draw(color=(0,0,0), width=2)
 
         elif event.key == pygame.K_EQUALS:
           if current_depth < len(hexagons)-1:
             current_depth += 1
-            print("Current depth: {0}".format(current_depth))
-            for h in hexagons[current_depth]:
-              h.draw()
-            for h in hexagons[current_depth]:
-              h.draw(color=(0,0,0), width=2)
-
-          print("GO DOWN ONE LEVEL")
 
         elif event.key == pygame.K_UP:
           phone.move_by((0, -1)) # UP is actually down.
+
         elif event.key == pygame.K_DOWN:
           phone.move_by((0, 1))  # DOWN is actually up.
+
         elif event.key == pygame.K_RIGHT:
           phone.move_by((1, 0))
+
         elif event.key == pygame.K_LEFT:
           phone.move_by((-1, 0))
 
         # Need a better way to update this.
         #screen.fill((127, 127, 127))
+        current_depth_hexagons = hexagons[current_depth]
+        for h in current_depth_hexagons:
+          h.draw()
+        for h in current_depth_hexagons:
+          h.draw(color=(0,0,0), width=2)     
         phones.update()
         phones.draw(screen)
         pygame.display.update()
