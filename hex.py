@@ -346,7 +346,8 @@ def draw_all_hexagons(center, side_length):
 
 class Phone(pygame.sprite.Sprite, Point):
   movement_offset = 10
-  def __init__(self):
+
+  def __init__(self, char):
     pygame.sprite.Sprite.__init__(self)
     self.image = pygame.image.load("phone.png").convert_alpha()
     self.rect = self.image.get_rect()
@@ -354,6 +355,8 @@ class Phone(pygame.sprite.Sprite, Point):
     self.rect.center = transform_points_for_pygame([center])[0]
     self.offset = (0,0)
     Point.__init__(self, center)
+    label_font = pygame.font.SysFont("monospace", 15)
+    self.label = label_font.render(char, True, (255, 255, 255))
     print(self.rect.center)
 
 
@@ -366,6 +369,13 @@ class Phone(pygame.sprite.Sprite, Point):
     self.rect.center = transform_points_for_pygame([center])[0]
     self._set_coords(center)
     self.offset = (0,0)
+    self.update_text()
+
+
+  def update_text(self):
+    x = self.label.get_width()
+    y = self.label.get_height()
+    self.image.blit(self.label, (x, y))
 
 
   def move_by(self, offset_vector):
@@ -393,7 +403,7 @@ if __name__ == "__main__":
     center=(X_RES/2, Y_RES/2),
     side_length=Y_RES/2
   )
-  phone = Phone()
+  phone = Phone('A')
   screen.blit(phone.image, phone.rect)
 
   phones = pygame.sprite.RenderUpdates(phone)
