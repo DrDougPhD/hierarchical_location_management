@@ -37,8 +37,7 @@ rotate_60 = numpy.matrix([
       [-sin_60_degrees, cos_60_degrees],
 ])
 
-
-class Hexagon:
+class Hexagon(pygame.sprite.Sprite):
   number_of_sides = 6
   neighbor_order = ["NE", "E", "SE", "SW", "W", "NW"]
   vertex_order = ["N", "NE", "SE", "S", "SW", "NW"]
@@ -58,7 +57,7 @@ class Hexagon:
     #
     # side_length := a scalar representing the length of any side of the
     #  resulting hexagon.
-
+    pygame.sprite.Sprite.__init__(self)
     if center is not None and\
        northern_most_unit_vector_direction is not None and\
        side_length is not None:
@@ -141,7 +140,46 @@ class Hexagon:
     self.center_internal_hex = self.internal_hexagons
 
     self.parent = parent
-
+    from pprint import pprint
+    def r(v):
+      print("-"*20)
+      print(v)
+      print(float(v[0]))
+    left = float(min(self.vertices, key=lambda v: float(v[0]))[0])
+    top = float(min(self.transform_points_for_pygame(self.vertices), key=lambda v: float(v[1]))[1])
+    c = self.center[0]
+    print("-"*20)
+    print(c)
+    width = 2*(float(self.center[0]) - left)
+    print("self.center")
+    print(self.center)
+    print("self.transform_points_for_pygame([self.center])")
+    print(self.transform_points_for_pygame([self.center]))
+    print("self.transform_points_for_pygame([self.center])[0]")
+    print(self.transform_points_for_pygame([self.center])[0])
+    print("self.transform_points_for_pygame([self.center])[0][1]")
+    print(self.transform_points_for_pygame([self.center])[0][1])
+    print("float(self.transform_points_for_pygame([self.center])[0][1])")
+    print(float(self.transform_points_for_pygame([self.center])[0][1]))
+    height = 2*(float(self.transform_points_for_pygame([self.center])[0][1]) - top)
+    print("height")
+    print(height)
+    #print("Left: {0}".format(left))
+    #print("Top:  {0}".format(top))
+    #print("Width: {0}".format(width))
+    #print("Height: {0}".format(height))
+    self.rect = pygame.Rect(left, top, width, height)
+    pygame.draw.polygon(
+      pygame.display.get_surface(),
+      (255,255,255),
+      [
+        (left, top),
+        (left, top+height),
+        (left+width, top+height),
+        (left+width, top)
+      ],
+      2
+    )
 
   def copy(self, hexagon):
     # Copy constructor.
@@ -163,6 +201,20 @@ class Hexagon:
         self.transform_points_for_pygame(self.vertices),
         width
       )
+
+      l, t, w, h = self.rect.left, self.rect.top, self.rect.width, self.rect.height
+      pygame.draw.polygon(
+        pygame.display.get_surface(),
+        (255,255,255),
+        [
+          (l, t),
+          (l, t+h),
+          (l+w, t+h),
+          (l+w, t)
+        ],
+        2
+      )
+
 
 
   def draw_vertices(self, color=None):
@@ -345,8 +397,10 @@ class Phone(pygame.sprite.Sprite):
     pygame.sprite.Sprite.__init__(self)
     self.image = pygame.image.load("phone.png").convert_alpha()
     self.rect = self.image.get_rect()
-    self.rect.topleft = (10,10)
+    self.rect.topleft = (10,0)
+    self.offset = (0,0)
     print(self.rect)
+    print(self.rect.top)
 
 
   def update(self):
