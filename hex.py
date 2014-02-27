@@ -140,46 +140,13 @@ class Hexagon(pygame.sprite.Sprite):
     self.center_internal_hex = self.internal_hexagons
 
     self.parent = parent
-    from pprint import pprint
-    def r(v):
-      print("-"*20)
-      print(v)
-      print(float(v[0]))
+
     left = float(min(self.vertices, key=lambda v: float(v[0]))[0])
     top = float(min(self.transform_points_for_pygame(self.vertices), key=lambda v: float(v[1]))[1])
-    c = self.center[0]
-    print("-"*20)
-    print(c)
     width = 2*(float(self.center[0]) - left)
-    print("self.center")
-    print(self.center)
-    print("self.transform_points_for_pygame([self.center])")
-    print(self.transform_points_for_pygame([self.center]))
-    print("self.transform_points_for_pygame([self.center])[0]")
-    print(self.transform_points_for_pygame([self.center])[0])
-    print("self.transform_points_for_pygame([self.center])[0][1]")
-    print(self.transform_points_for_pygame([self.center])[0][1])
-    print("float(self.transform_points_for_pygame([self.center])[0][1])")
-    print(float(self.transform_points_for_pygame([self.center])[0][1]))
     height = 2*(float(self.transform_points_for_pygame([self.center])[0][1]) - top)
-    print("height")
-    print(height)
-    #print("Left: {0}".format(left))
-    #print("Top:  {0}".format(top))
-    #print("Width: {0}".format(width))
-    #print("Height: {0}".format(height))
     self.rect = pygame.Rect(left, top, width, height)
-    pygame.draw.polygon(
-      pygame.display.get_surface(),
-      (255,255,255),
-      [
-        (left, top),
-        (left, top+height),
-        (left+width, top+height),
-        (left+width, top)
-      ],
-      2
-    )
+
 
   def copy(self, hexagon):
     # Copy constructor.
@@ -201,20 +168,6 @@ class Hexagon(pygame.sprite.Sprite):
         self.transform_points_for_pygame(self.vertices),
         width
       )
-
-      l, t, w, h = self.rect.left, self.rect.top, self.rect.width, self.rect.height
-      pygame.draw.polygon(
-        pygame.display.get_surface(),
-        (255,255,255),
-        [
-          (l, t),
-          (l, t+h),
-          (l+w, t+h),
-          (l+w, t)
-        ],
-        2
-      )
-
 
 
   def draw_vertices(self, color=None):
