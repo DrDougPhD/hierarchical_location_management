@@ -347,17 +347,16 @@ def draw_all_hexagons(center, side_length):
 class Phone(pygame.sprite.Sprite, Point):
   movement_offset = 10
 
-  def __init__(self, char):
+  def __init__(self, char, center):
     pygame.sprite.Sprite.__init__(self)
     self.image = pygame.image.load("phone.png").convert_alpha()
     self.rect = self.image.get_rect()
-    center = (10, 10)
     self.rect.center = transform_points_for_pygame([center])[0]
     self.offset = (0,0)
     Point.__init__(self, center)
     label_font = pygame.font.SysFont("monospace", 15)
     self.label = label_font.render(char, True, (255, 255, 255))
-    print(self.rect.center)
+    self.draw_text()
 
 
   def update(self):
@@ -369,10 +368,9 @@ class Phone(pygame.sprite.Sprite, Point):
     self.rect.center = transform_points_for_pygame([center])[0]
     self._set_coords(center)
     self.offset = (0,0)
-    self.update_text()
 
 
-  def update_text(self):
+  def draw_text(self):
     x = self.label.get_width()
     y = self.label.get_height()
     self.image.blit(self.label, (x, y))
@@ -403,10 +401,18 @@ if __name__ == "__main__":
     center=(X_RES/2, Y_RES/2),
     side_length=Y_RES/2
   )
-  phone = Phone('A')
-  screen.blit(phone.image, phone.rect)
 
-  phones = pygame.sprite.RenderUpdates(phone)
+  phone_dict = {
+    'a': Phone('A', (10, 10)),
+    'b': Phone('B', (X_RES/2, Y_RES/2)),
+    'c': Phone('C', (2*X_RES/3.0, 2*Y_RES/3.0))
+  }
+  selected_phone = phone_dict['a']
+  for k in phone_dict:
+    p = phone_dict[k]
+    screen.blit(p.image, p.rect)
+
+  phones = pygame.sprite.RenderUpdates(phone_dict.values())
 
   pygame.display.update()
   current_depth = len(hexagons)-1
@@ -430,16 +436,20 @@ if __name__ == "__main__":
             current_depth += 1
 
         elif event.key == pygame.K_UP:
-          phone.move_by((0, 1)) # UP is actually down.
+          selected_phone.move_by((0, 1)) # UP is actually down.
 
         elif event.key == pygame.K_DOWN:
-          phone.move_by((0, -1))  # DOWN is actually up.
+          selected_phone.move_by((0, -1))  # DOWN is actually up.
 
         elif event.key == pygame.K_RIGHT:
-          phone.move_by((1, 0))
+          selected_phone.move_by((1, 0))
 
         elif event.key == pygame.K_LEFT:
-          phone.move_by((-1, 0))
+          selected_phone.move_by((-1, 0))
+
+        elif event.key in [ord(k) for k in phone_dict]:
+          key = chr(event.key)
+          selected_phone = phone_dict[key]
 
         # Need a better way to update this.
         #screen.fill((127, 127, 127))
@@ -447,7 +457,7 @@ if __name__ == "__main__":
         for h in current_depth_hexagons:
           h.draw()
         for h in current_depth_hexagons:
-          if h.contains(phone):
+          if h.contains(selected_phone):
             print("Hexagon contains phone")
             h.draw(color=(255, 255, 255), width=5)
           else:
