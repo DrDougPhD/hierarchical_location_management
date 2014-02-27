@@ -7,6 +7,8 @@ import math
 import random
 import time
 import pygame
+from shapely.geometry import Point
+from shapely.geometry import Polygon
 random.seed(time.time())
 
 Y_RES = 800
@@ -29,6 +31,11 @@ def is_within_frame(v):
   x, y = v
   return 0 <= x <= X_RES and 0 <= y <= Y_RES
 
+
+def transform_points_for_pygame(points):
+  return [(p[0], Y_RES - p[1]) for p in points]
+
+
 pi_d_3 = numpy.pi/3
 sin_60_degrees = numpy.sin(pi_d_3)
 cos_60_degrees = numpy.cos(pi_d_3)
@@ -37,7 +44,7 @@ rotate_60 = numpy.matrix([
       [-sin_60_degrees, cos_60_degrees],
 ])
 
-class Hexagon:
+class Hexagon(Polygon):
   number_of_sides = 6
   neighbor_order = ["NE", "E", "SE", "SW", "W", "NW"]
   vertex_order = ["N", "NE", "SE", "S", "SW", "NW"]
@@ -119,6 +126,7 @@ class Hexagon:
     self.south_vertex,\
     self.southwest_vertex,\
     self.northwest_vertex = self.vertices
+    Polygon.__init__(self, self.vertices)
 
     # The following member variables correspond to points to neighboring
     #  hexagons related to the topological relationship between this hexagon
@@ -160,7 +168,7 @@ class Hexagon:
       pygame.draw.polygon(
         pygame.display.get_surface(),
         color,
-        self.transform_points_for_pygame(self.vertices),
+        transform_points_for_pygame(self.vertices),
         width
       )
 
@@ -171,12 +179,8 @@ class Hexagon:
         color = self.color
       map(
         lambda p: pygame.draw.circle(pygame.display.get_surface(), color, p, 4),
-        self.transform_points_for_pygame(self.vertices)
+        transform_points_for_pygame(self.vertices)
       )
-
-
-  def transform_points_for_pygame(self, points):
-    return [(p[0], Y_RES - p[1]) for p in points]
 
 
   def create_internal_hexagons(self):
@@ -340,24 +344,27 @@ def draw_all_hexagons(center, side_length):
   return hexagons
 
 
-class Phone(pygame.sprite.Sprite):
+class Phone(pygame.sprite.Sprite, Point):
   movement_offset = 10
   def __init__(self):
     pygame.sprite.Sprite.__init__(self)
     self.image = pygame.image.load("phone.png").convert_alpha()
     self.rect = self.image.get_rect()
-    self.rect.topleft = (10,0)
+    center = (10, 10)
+    self.rect.center = transform_points_for_pygame([center])[0]
     self.offset = (0,0)
-    print(self.rect)
-    print(self.rect.top)
+    Point.__init__(self, center)
+    print(self.rect.center)
 
 
   def update(self):
-    x, y = self.rect.topleft
-    self.rect.topleft = (
-      x+self.movement_offset*self.offset[0],
-      y+self.movement_offset*self.offset[1]
+    x, y = self.coords[0]
+    center = (
+      x + self.movement_offset*self.offset[0],
+      y + self.movement_offset*self.offset[1]
     )
+    self.rect.center = transform_points_for_pygame([center])[0]
+    self._set_coords(center)
     self.offset = (0,0)
 
 
@@ -413,10 +420,10 @@ if __name__ == "__main__":
             current_depth += 1
 
         elif event.key == pygame.K_UP:
-          phone.move_by((0, -1)) # UP is actually down.
+          phone.move_by((0, 1)) # UP is actually down.
 
         elif event.key == pygame.K_DOWN:
-          phone.move_by((0, 1))  # DOWN is actually up.
+          phone.move_by((0, -1))  # DOWN is actually up.
 
         elif event.key == pygame.K_RIGHT:
           phone.move_by((1, 0))
@@ -430,7 +437,11 @@ if __name__ == "__main__":
         for h in current_depth_hexagons:
           h.draw()
         for h in current_depth_hexagons:
-          h.draw(color=(0,0,0), width=2)     
+          if h.contains(phone):
+            print("Hexagon contains phone")
+            h.draw(color=(255, 255, 255), width=5)
+          else:
+            h.draw(color=(0,0,0), width=2)     
         phones.update()
         phones.draw(screen)
         pygame.display.update()
