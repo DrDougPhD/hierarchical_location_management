@@ -145,6 +145,7 @@ class Hexagon(pygame.sprite.Sprite):
     top = float(min(self.transform_points_for_pygame(self.vertices), key=lambda v: float(v[1]))[1])
     width = 2*(float(self.center[0]) - left)
     height = 2*(float(self.transform_points_for_pygame([self.center])[0][1]) - top)
+    self.image = pygame.Surface((width, height))
     self.rect = pygame.Rect(left, top, width, height)
 
 
@@ -163,7 +164,7 @@ class Hexagon(pygame.sprite.Sprite):
       if color is None:
         color = RANDOM_COLOR()
       pygame.draw.polygon(
-        pygame.display.get_surface(),
+        self.image, #pygame.display.get_surface(),
         color,
         self.transform_points_for_pygame(self.vertices),
         width
@@ -389,10 +390,11 @@ if __name__ == "__main__":
   phone = Phone()
   screen.blit(phone.image, phone.rect)
 
+  current_depth = len(hexagons)-1
   phones = pygame.sprite.RenderUpdates(phone)
+  phones.add(hexagons[current_depth])
 
   pygame.display.update()
-  current_depth = len(hexagons)-1
   while True:
     for event in pygame.event.get(): 
       if event.type == pygame.QUIT: 
