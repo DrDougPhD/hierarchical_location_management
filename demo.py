@@ -90,8 +90,8 @@ while True:
     elif event.type == pygame.KEYDOWN:
       k = pygame.key.get_pressed()
       m = pygame.key.get_mods()
-      if m and pygame.KMOD_SHIFT and k[pygame.K_9]:
-        if m and pygame.KMOD_CTRL:
+      if m & pygame.KMOD_SHIFT and k[pygame.K_9]:
+        if m & pygame.KMOD_CTRL:
           print("Controlled")
         else:
           print("Not controlled")

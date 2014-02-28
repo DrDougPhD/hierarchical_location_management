@@ -391,7 +391,10 @@ if __name__ == "__main__":
   phone_dict = {
     'a': Phone('A', (10, 10)),
     'b': Phone('B', (X_RES/2, Y_RES/2)),
-    'c': Phone('C', (2*X_RES/3.0, 2*Y_RES/3.0))
+    'c': Phone('C', (2*X_RES/3.0, 2*Y_RES/3.0)),
+    'd': Phone('D', (2*X_RES/3.0+40, 2*Y_RES/3.0)),
+    'e': Phone('E', (2*X_RES/3.0+60, 2*Y_RES/3.0)),
+    'f': Phone('F', (2*X_RES/3.0+80, 2*Y_RES/3.0))
   }
   selected_phone = phone_dict['a']
 
