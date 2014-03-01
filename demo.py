@@ -86,7 +86,16 @@ pygame.display.update()
 while True:
   for event in pygame.event.get(): 
     if event.type == pygame.QUIT: 
-      sys.exit(0) 
+      sys.exit(0)
+    elif event.type == pygame.KEYDOWN:
+      k = pygame.key.get_pressed()
+      m = pygame.key.get_mods()
+      if m & pygame.KMOD_SHIFT and k[pygame.K_9]:
+        if m & pygame.KMOD_CTRL:
+          print("Controlled")
+        else:
+          print("Not controlled")
+ 
     else:
       print event
 

@@ -281,12 +281,6 @@ class Hexagon(Polygon):
   def set_neighbor(self, neighbor, direction_index):
     self.neighboring_hexagons[direction_index] = neighbor
     neighbor.neighboring_hexagons[(direction_index+3)%6] = self
-    #pygame.draw.line(
-    #  self.screen,
-    #  (255,255,255),
-    #  self.transform_points_for_pygame([self.center])[0],
-    #  self.transform_points_for_pygame([neighbor.center])[0]
-    #)
 
 
   def set_northeast_neighbor(self, neighbor):
@@ -382,22 +376,13 @@ class Phone(pygame.sprite.Sprite, Point):
 
 
 if __name__ == "__main__":
-  # Pygame requires integers for drawing coordinates, not real values.
-  #  Hexagons have a lot of sqrt(3) in their calculations since they are
-  #  composed of six equilateral triangles (or twelve 30-60-90 triangles).
-  #  Since the length of one edge a is 1 and the length of the other edge
-  #  b is sqrt(3), I had to find an integer coefficient x such that
-  #  x*sqrt(3) is approximately an integer with minimal loss of accuracy
-  #  when rounding. Having x = 26 is sufficient, as 26*sqrt(3) ~= 45.
-  #  Thus, the equilateral triangles that make up a hexagon will have
-  #  the length of side a equal to 26, and the length of side b equal to 45.
-  #  This results in the hexagon composed of these triangles having a side
-  #  length of 45.
   import sys
   pygame.init()
   screen = pygame.display.set_mode((X_RES, Y_RES))
-  screen.fill((127, 127, 127))
+  BACKGROUND_COLOR = (127, 127, 127)
+  screen.fill(BACKGROUND_COLOR)
 
+  # Create every hexagon on each level.
   hexagons = draw_all_hexagons(
     center=(X_RES/2, Y_RES/2),
     side_length=Y_RES/2
@@ -419,17 +404,22 @@ if __name__ == "__main__":
     p = phone_dict[k]
     screen.blit(p.image, p.rect)
 
+  # Phones need to be added to a render group so that they're updated whenever
+  #  they move.
   phones = pygame.sprite.RenderUpdates(phone_dict.values())
 
   pygame.display.update()
   current_depth = len(hexagons)-1
   current_depth_hexagons = hexagons[current_depth]
+
   while True:
     for event in pygame.event.get(): 
       if event.type == pygame.QUIT: 
         sys.exit(0) 
       elif event.type == pygame.KEYDOWN:
-        screen.fill((127, 127, 127))
+
+        # Erase the entire screen for preparation of redrawing.
+        screen.fill(BACKGROUND_COLOR)
 
         # If the Minus key is pressed, interpret this as the user wants to
         #  visualize the the depth that is above the currently displayed depth.
@@ -442,11 +432,13 @@ if __name__ == "__main__":
           if current_depth < len(hexagons)-1:
             current_depth += 1
 
+        # If the arrow keys are pressed, then we assume the user wants to move
+        #  the currently selected phone in the direction of the key.
         elif event.key == pygame.K_UP:
-          selected_phone.move_by((0, 1)) # UP is actually down.
+          selected_phone.move_by((0, 1))
 
         elif event.key == pygame.K_DOWN:
-          selected_phone.move_by((0, -1))  # DOWN is actually up.
+          selected_phone.move_by((0, -1))
 
         elif event.key == pygame.K_RIGHT:
           selected_phone.move_by((1, 0))
@@ -480,19 +472,21 @@ if __name__ == "__main__":
             ))
             selected_phone = phone_dict[key]
 
-        # Need a better way to update this.
-        #screen.fill((127, 127, 127))
+        # Redraw the hexagons that are on the currently selected depth.
         current_depth_hexagons = hexagons[current_depth]
         for h in current_depth_hexagons:
           h.draw()
         for h in current_depth_hexagons:
+          # Determine which hexagon currently contains the selected phone.
           if h.contains(selected_phone):
-            print("Hexagon contains phone")
             h.draw(color=(255, 255, 255), width=5)
           else:
-            h.draw(color=(0,0,0), width=2)     
+            h.draw(color=(0,0,0), width=2)
+
+        # Draw all of the phones to the screen.
         phones.update()
         phones.draw(screen)
         pygame.display.update()
+
       else:
         print(event)
