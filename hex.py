@@ -402,6 +402,7 @@ class Phone(pygame.sprite.Sprite, Point):
     if self.PCS_cell is None:
       for h in self.cells:
         if h.contains(self):
+          print("{0} has moved".format(self.id))
           return True
       return False
 
@@ -409,7 +410,30 @@ class Phone(pygame.sprite.Sprite, Point):
       if self.PCS_cell.contains(self):
         return False
       else:
+        print("{0} has moved".format(self.id))
         return True
+
+  def update_location(self):
+    # It is assumed that the phone has updated its location, which is one of
+    #  the possible update scenarios:
+    #  1. None -> Cell
+    #  2. Cell -> Cell
+    #  3. Cell -> None
+    if self.PCS_cell is None:
+      #  1. None -> Cell
+      for h in self.cells:
+        if h.contains(self):
+          self.PCS_cell = h
+          return
+
+    else:
+      #  2. Cell -> Cell
+      #  3. Cell -> None
+      self.PCS_cell = None
+      for h in self.cells:
+        if h.contains(self):
+          self.PCS_cell = h
+          return
 
 
 if __name__ == "__main__":
@@ -520,21 +544,12 @@ if __name__ == "__main__":
           h.draw()
 
         # Check to see if the phone is still in the previously set cell.
+        if selected_phone.has_moved_to_new_cell():
+          selected_phone.update_location()
+
         cell = selected_phone.PCS_cell
         if cell is not None:
-          if not cell.contains(selected_phone):
-            # An update is needed for the cell.
-            selected_phone.PCS_cell = None
-            for h in PCS_cells:
-              if h.contains(selected_phone):
-                selected_phone.PCS_cell = h
-                h.draw(color=(255,255,255), width=5)
-
-        else:
-          for h in PCS_cells:
-            if h.contains(selected_phone):
-              selected_phone.PCS_cell = h
-              h.draw(color=(255,255,255), width=5)
+          cell.draw(color=(255,255,255), width=5)
 
         for h in current_depth_hexagons:
           # Determine which hexagon currently contains the selected phone.
