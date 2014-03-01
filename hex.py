@@ -349,6 +349,7 @@ class Phone(pygame.sprite.Sprite, Point):
 
   def __init__(self, char, center):
     pygame.sprite.Sprite.__init__(self)
+    self.id = char
     self.image = pygame.image.load("phone.png").convert_alpha()
     self.rect = self.image.get_rect()
     self.rect.center = transform_points_for_pygame([center])[0]
@@ -402,12 +403,18 @@ if __name__ == "__main__":
     side_length=Y_RES/2
   )
 
-  phone_dict = {
-    'a': Phone('A', (10, 10)),
-    'b': Phone('B', (X_RES/2, Y_RES/2)),
-    'c': Phone('C', (2*X_RES/3.0, 2*Y_RES/3.0))
-  }
+  phone_labels = ['a', 'b', 'c', 'd', 'e']
+  random_coord_within_screen = lambda coords: [
+    random.randint(0, coords[i]) for i in range(2)
+  ]
+
+  phone_dict = {}
+  for l in phone_labels:
+    phone_dict[l] = Phone(l.upper(), random_coord_within_screen((X_RES, Y_RES)))
+
   selected_phone = phone_dict['a']
+
+  # Draw each phone on the screen.
   for k in phone_dict:
     p = phone_dict[k]
     screen.blit(p.image, p.rect)
@@ -447,9 +454,31 @@ if __name__ == "__main__":
         elif event.key == pygame.K_LEFT:
           selected_phone.move_by((-1, 0))
 
-        elif event.key in [ord(k) for k in phone_dict]:
+        # Test if one of the cell phone labels have been selected.
+        elif event.key in [ord(k) for k in phone_labels]:
+          # We now need to determine if the user is selecting a cell phone, or
+          #  if they are calling a cell phone.
           key = chr(event.key)
-          selected_phone = phone_dict[key]
+
+          # Test if the Ctrl button is selected. This implies the user is
+          #  calling another cell phone.
+          if pygame.key.get_mods() & pygame.KMOD_CTRL:
+            # One of the Ctrl keys is being pressed. This represents a call.
+            # The phone initiating the call is the currently selected phone.
+            # We must now make sure the callee is not the same as the caller.
+            callee = phone_dict[key]
+            if callee != selected_phone:
+              print("{0} calling {1}".format(selected_phone.id, callee.id))
+            else:
+              print("Calling yourself? How odd...")
+
+          else:
+            # The user is pressing only one key, which is a label for another
+            #  phone. Make this phone the currently selected phone.
+            print("Changing focus from {0} to {1}".format(
+              selected_phone.id, key
+            ))
+            selected_phone = phone_dict[key]
 
         # Need a better way to update this.
         #screen.fill((127, 127, 127))
