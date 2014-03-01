@@ -341,19 +341,42 @@ def draw_all_hexagons(center, side_length):
 class Phone(pygame.sprite.Sprite, Point):
   movement_offset = 10
 
-  def __init__(self, char, center):
+  def __init__(self, char, center, cells):
     pygame.sprite.Sprite.__init__(self)
+    Point.__init__(self, center)
+
+    # This is the unique name/address of the phone.
     self.id = char
+
+    # These are all of the PCS cells in which this phone can be within.
+    self.cells = cells
+
+    # This is the geographic cell in which the phone is within. The center of
+    #  this cell has a base station with which this phone can connect with
+    #  to make calls, register its location, etc.
+    self.PCS_cell = None
+    for h in self.cells:
+      if h.contains(self):
+        self.PCS_cell = h
+
+    # These member variables are required for this Phone class to be a
+    #  sprite.
     self.image = pygame.image.load("phone.png").convert_alpha()
     self.rect = self.image.get_rect()
     self.rect.center = transform_points_for_pygame([center])[0]
+
+    # If the phone is moved, the offset vector will be updated. It is a
+    #  direction vector.
     self.offset = (0,0)
-    Point.__init__(self, center)
+
+    # The label is drawn on top of the sprite.
     label_font = pygame.font.SysFont("monospace", 15)
     self.label = label_font.render(char, True, (255, 255, 255))
     self.draw_text()
 
 
+  # This function is called by the RenderGroup object with which this phone is
+  #  a member of.
   def update(self):
     x, y = self.coords[0]
     center = (
@@ -375,6 +398,20 @@ class Phone(pygame.sprite.Sprite, Point):
     self.offset = offset_vector
 
 
+  def has_moved_to_new_cell(self):
+    if self.PCS_cell is None:
+      for h in self.cells:
+        if h.contains(self):
+          return True
+      return False
+
+    else:
+      if self.PCS_cell.contains(self):
+        return False
+      else:
+        return True
+
+
 if __name__ == "__main__":
   import sys
   pygame.init()
@@ -387,6 +424,9 @@ if __name__ == "__main__":
     center=(X_RES/2, Y_RES/2),
     side_length=Y_RES/2
   )
+  PCS_cells = hexagons[-1]
+  current_depth = len(hexagons)-1
+  current_depth_hexagons = hexagons[current_depth]
 
   phone_labels = ['a', 'b', 'c', 'd', 'e']
   random_coord_within_screen = lambda coords: [
@@ -395,7 +435,11 @@ if __name__ == "__main__":
 
   phone_dict = {}
   for l in phone_labels:
-    phone_dict[l] = Phone(l.upper(), random_coord_within_screen((X_RES, Y_RES)))
+    phone_dict[l] = Phone(
+      char=l.upper(),
+      center=random_coord_within_screen((X_RES, Y_RES)),
+      cells=PCS_cells
+    )
 
   selected_phone = phone_dict['a']
 
@@ -409,8 +453,6 @@ if __name__ == "__main__":
   phones = pygame.sprite.RenderUpdates(phone_dict.values())
 
   pygame.display.update()
-  current_depth = len(hexagons)-1
-  current_depth_hexagons = hexagons[current_depth]
 
   while True:
     for event in pygame.event.get(): 
@@ -476,12 +518,30 @@ if __name__ == "__main__":
         current_depth_hexagons = hexagons[current_depth]
         for h in current_depth_hexagons:
           h.draw()
+
+        # Check to see if the phone is still in the previously set cell.
+        cell = selected_phone.PCS_cell
+        if cell is not None:
+          if not cell.contains(selected_phone):
+            # An update is needed for the cell.
+            selected_phone.PCS_cell = None
+            for h in PCS_cells:
+              if h.contains(selected_phone):
+                selected_phone.PCS_cell = h
+                h.draw(color=(255,255,255), width=5)
+
+        else:
+          for h in PCS_cells:
+            if h.contains(selected_phone):
+              selected_phone.PCS_cell = h
+              h.draw(color=(255,255,255), width=5)
+
         for h in current_depth_hexagons:
           # Determine which hexagon currently contains the selected phone.
-          if h.contains(selected_phone):
-            h.draw(color=(255, 255, 255), width=5)
-          else:
+          if h != selected_phone.PCS_cell:
             h.draw(color=(0,0,0), width=2)
+          else:
+            h.draw(color=(255,255,255), width=5)
 
         # Draw all of the phones to the screen.
         phones.update()
