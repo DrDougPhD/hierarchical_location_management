@@ -174,41 +174,44 @@ class BasicValueLocationManager(BaseLocationManager):
 
     if cell_of_caller is None:
       # This registration area is the cell of caller.
+      cell_of_caller = self
+
       phone.num_writes += 1
       self.registered_phones[phone.id] = phone
-      cell_to_update = None
       print("{0} - REGISTER: For {1}, {2} -> {1}".format(
         self.depth,
         phone.id,
         id(self)
       ))
 
-    elif phone.id in self.registered_phones:
-      # This registration area is a parent of the cell of caller.
+    else:
+      if phone.id in self.registered_phones:
+        # This registration area is a parent of the cell of caller.
 
-      # All registration areas above this registration area must be updated.
-      phone.num_reads += 1
-      print("{0} - REGISTER found pre-existing record for {1} at {2} (-> {3})".format(
+        # All registration areas above this registration area must be updated.
+        phone.num_reads += 1
+        print("{0} - REGISTER found pre-existing record for {1} at {2} (-> {3})".format(
+          self.depth,
+          phone.id,
+          id(self),
+          id(self.registered_phones[phone.id])
+        ))
+        self.registered_phones[phone.id].unregister(phone)
+
+        # This record will be deleted in the unregister() procedure, and will
+        #  be updated immediately once unregistering is complete. Thus, it is
+        #  only considered as one write.
+
+      else:
+        phone.num_writes += 1
+
+      self.registered_phones[phone.id] = cell_of_caller
+      print("{0} - REGISTER: For {1}, {2} -> {3}".format(
         self.depth,
         phone.id,
         id(self),
-        id(self.registered_phones[phone.id])
+        id(cell_of_caller)
       ))
-      self.registered_phones[phone.id].unregister(phone)
-
-      # This record will be deleted in the unregister() procedure, and will
-      #  be updated immediately once unregistering is complete. Thus, it is
-      #  only considered as one write.
-      phone.num_writes -= 1
-
-    phone.num_writes += 1
-    self.registered_phones[phone.id] = cell_to_update
-    print("{0} - REGISTER: For {1}, {2} -> {3}".format(
-      self.depth,
-      phone.id,
-      id(self),
-      id(cell_of_caller)
-    ))
 
     if self.parent is not None:
       self.parent.register(phone, cell_of_caller)
