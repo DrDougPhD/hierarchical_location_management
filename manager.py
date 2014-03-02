@@ -31,31 +31,45 @@ class BaseLocationManager(Hexagon):
     # Callee is the unique name of the phone being called.
     # Caller is the phone object placing the call.
     if trace is None:
-      trace = "{0}".format(id(self))
+      trace = "{0} -> {1} (depth {2})".format(caller.id, id(self), self.depth)
+    else:
+      trace = "{0} -> {1} (depth {2})".format(trace, id(self), self.depth)
 
     caller.num_reads += 1
     if callee in self.registered_phones:
       record = self.registered_phones[callee]
+      print("Record: {0}".format(record))
       if type(record) is BaseLocationManager:
         # If the record points to a Registration Area, then we have not found
         #  the cell containing the phone yet and must continue searching.
-        record.search_for(callee, caller, trace="{0} -> {1}".format(trace, id(self)))
+        print("RA record for {0} is found from {1} (depth {2}) -> {3} (depth"
+              " {4}). Following pointer.".format(
+          callee,
+          id(self),
+          self.depth,
+          id(record),
+          record.depth
+        ))
+        record.search_for(callee, caller, trace)
 
       else:
-        print("Cell for {0} is found. Connecting call for {1} -> {0}".format(
+        print("Cell for {0} is found at {1} (depth {2}). Connecting call for"
+              " {3} -> {0}".format(
           callee,
+          id(self),
+          self.depth,
           caller.id
         ))
-        print("Call trace: {0}".format(trace))
+        print("Call trace: {0} -> {1}".format(trace, callee))
 
     elif self.parent is not None:
-      self.parent.search_for(callee, caller, trace="{0} -> {1}".format(trace, id(self)))
+      self.parent.search_for(callee, caller, trace)
 
     else:
       print("Callee {0} is not registered in the network. VOICEMAIL.".format(
         callee
       ))
-      print("Call trace: {0}".format(trace))
+      print("Call trace: {0} -> VOICEMAIL".format(trace))
 
 
 class BasicPointerLocationManager(BaseLocationManager):

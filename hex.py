@@ -18,8 +18,8 @@ from phone import Phone
 def draw_all_hexagons(center, side_length):
   center_point = numpy.array([(center)]).T
   # Create all hexagons within the viewing window.
-  #root_hexagon = BasicPointerLocationManager(
-  root_hexagon = BasicValueLocationManager(
+  root_hexagon = BasicPointerLocationManager(
+  #root_hexagon = BasicValueLocationManager(
     center=center_point,
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
     side_length=side_length
