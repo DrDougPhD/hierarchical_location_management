@@ -391,6 +391,18 @@ class Hexagon(Polygon):
     del self.registered_phones[phone.id]
 
 
+  def dark_spot_deregister(self, phone):
+    print("{0} - DARK SPOT DEREGISTER for {1} at {2}".format(
+      self.depth,
+      phone.id,
+      id(self)
+    ))
+    del self.registered_phones[phone.id]
+
+    if self.parent is not None:
+      self.parent.dark_spot_deregister(phone)
+
+
 def draw_all_hexagons(center, side_length):
   center_point = numpy.array([(center)]).T
   # Create all hexagons within the viewing window.
@@ -515,12 +527,17 @@ class Phone(pygame.sprite.Sprite, Point):
     else:
       #  2. Cell -> Cell
       #  3. Cell -> None
+      old_cell = self.PCS_cell
       self.PCS_cell = None
       for h in self.cells:
         if h.contains(self):
           self.PCS_cell = h
           h.register(self)
-          return
+
+      if self.PCS_cell is None:
+        # The phone has roamed out of its coverage area, and thus should
+        #  perform a dark area deregister.
+        old_cell.dark_spot_deregister(self)
 
 
 if __name__ == "__main__":
