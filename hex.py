@@ -12,12 +12,14 @@ random.seed(time.time())
 from settings import X_RES
 from settings import Y_RES
 from manager import BasicPointerLocationManager
+from manager import BasicValueLocationManager
 from phone import Phone
 
 def draw_all_hexagons(center, side_length):
   center_point = numpy.array([(center)]).T
   # Create all hexagons within the viewing window.
-  root_hexagon = BasicPointerLocationManager(
+  #root_hexagon = BasicPointerLocationManager(
+  root_hexagon = BasicValueLocationManager(
     center=center_point,
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
     side_length=side_length

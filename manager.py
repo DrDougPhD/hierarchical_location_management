@@ -28,6 +28,9 @@ class BaseLocationManager(Hexagon):
 
 
 class BasicPointerLocationManager(BaseLocationManager):
+  # Each Registration Area has records for the phones within its registration
+  #  area, where the values associated with the phone IDs are pointers to the
+  #  smaller registration area immediately below it.
   def register(self, phone, child_caller=None):
     print("{0} - REGISTER of {1} at {2}".format(
       self.depth,
@@ -112,4 +115,76 @@ class BasicPointerLocationManager(BaseLocationManager):
     ))
     phone.num_writes += 1
     del self.registered_phones[phone.id]
+
+
+class BasicValueLocationManager(BaseLocationManager):
+  # Each registration area will have the absolute cell ID associated with the
+  #  phones that are within its registration area.
+  def register(self, phone, cell_of_caller=None):
+    print("{0} - REGISTER of {1} at {2}".format(
+      self.depth,
+      phone.id,
+      id(self)
+    ))
+
+    cell_to_update = None
+    if cell_of_caller is None:
+      cell_of_caller = self
+    # All registration areas above this registration area must be updated.
+    phone.num_reads += 1
+    if phone.id in self.registered_phones:
+      print("{0} - REGISTER found pre-existing record for {1} at {2} (-> {3})".format(
+        self.depth,
+        phone.id,
+        id(self),
+        id(self.registered_phones[phone.id])
+      ))
+      cell_to_update = self.registered_phones[phone.id]
+
+    phone.num_writes += 1
+    self.registered_phones[phone.id] = cell_of_caller
+    print("{0} - REGISTER: For {1}, {2} -> {3}".format(
+      self.depth,
+      phone.id,
+      id(self),
+      id(cell_of_caller)
+    ))
+
+    if self.parent is not None:
+      self.parent.register(phone, cell_of_caller)
+    elif cell_to_update is not None:
+      cell_to_update.unregister(phone)
+
+
+  def unregister(self, phone, old_cell=None):
+    print("{0} - UNREGISTER of {1} at {2}".format(
+      self.depth,
+      phone.id,
+      id(self)
+    ))
+
+    if old_cell is None:
+      old_cell = self
+      phone.num_writes += 1
+
+      print("{0} - UNREGISTER of {1}: {2} -x-> {3}".format(
+        self.depth,
+        phone.id,
+        id(self),
+        id(self.registered_phones[phone.id])
+      ))
+      del self.registered_phones[phone.id]
+
+    if self.parent is not None:
+      phone.num_reads += 1
+      if self.parent.registered_phones[phone.id] == old_cell:
+        phone.num_writes += 1
+        print("{0} - UNREGISTER parent of {1}: {2} -x-> {3}".format(
+          self.depth,
+          phone.id,
+          id(self.parent),
+          old_cell
+        ))
+        del self.parent.registered_phones[phone.id]
+        self.parent.unregister(phone, old_cell)
 
