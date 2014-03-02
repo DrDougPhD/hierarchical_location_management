@@ -109,4 +109,15 @@ class Phone(pygame.sprite.Sprite, Point):
         old_cell.dark_spot_deregister(self)
 
 
-
+  def call(self, callee):
+    # Callee is the unique name of the phone being called by this phone.
+    print("{0} calling {1}".format(
+      self.id,
+      callee
+    ))
+    if self.PCS_cell is not None:
+      self.PCS_cell.search_for(callee, self)
+    else:
+      print("{0} is not in a coverage area. Calls not possible.".format(
+        self.id
+      ))

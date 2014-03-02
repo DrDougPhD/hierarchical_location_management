@@ -27,6 +27,37 @@ class BaseLocationManager(Hexagon):
       self.parent.dark_spot_deregister(phone)
 
 
+  def search_for(self, callee, caller, trace=None):
+    # Callee is the unique name of the phone being called.
+    # Caller is the phone object placing the call.
+    if trace is None:
+      trace = "{0}".format(id(self))
+
+    caller.num_reads += 1
+    if callee in self.registered_phones:
+      record = self.registered_phones[callee]
+      if type(record) is BaseLocationManager:
+        # If the record points to a Registration Area, then we have not found
+        #  the cell containing the phone yet and must continue searching.
+        record.search_for(callee, caller, trace="{0} -> {1}".format(trace, id(self)))
+
+      else:
+        print("Cell for {0} is found. Connecting call for {1} -> {0}".format(
+          callee,
+          caller.id
+        ))
+        print("Call trace: {0}".format(trace))
+
+    elif self.parent is not None:
+      self.parent.search_for(callee, caller, trace="{0} -> {1}".format(trace, id(self)))
+
+    else:
+      print("Callee {0} is not registered in the network. VOICEMAIL.".format(
+        callee
+      ))
+      print("Call trace: {0}".format(trace))
+
+
 class BasicPointerLocationManager(BaseLocationManager):
   # Each Registration Area has records for the phones within its registration
   #  area, where the values associated with the phone IDs are pointers to the

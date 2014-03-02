@@ -137,7 +137,12 @@ if __name__ == "__main__":
             # We must now make sure the callee is not the same as the caller.
             callee = phone_dict[key]
             if callee != selected_phone:
-              print("{0} calling {1}".format(selected_phone.id, callee.id))
+              selected_phone.call(callee.id)
+              print("Cost: Reads := {0}, Writes := {1}".format(
+                selected_phone.num_reads,
+                selected_phone.num_writes
+              ))
+
             else:
               print("Calling yourself? How odd...")
 
@@ -158,9 +163,7 @@ if __name__ == "__main__":
         if selected_phone.has_moved_to_new_cell():
           selected_phone.update_location()
 
-          # Reads and Writes are stored as static variables, and should
-          #  update across all hexagons.
-          print("Update count: Reads := {0}, Writes := {1}".format(
+          print("Cost: Reads := {0}, Writes := {1}".format(
             selected_phone.num_reads,
             selected_phone.num_writes
           ))
