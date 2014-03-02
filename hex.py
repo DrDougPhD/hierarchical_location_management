@@ -156,6 +156,13 @@ if __name__ == "__main__":
         if selected_phone.has_moved_to_new_cell():
           selected_phone.update_location()
 
+          # Reads and Writes are stored as static variables, and should
+          #  update across all hexagons.
+          print("Update count: Reads := {0}, Writes := {1}".format(
+            selected_phone.num_reads,
+            selected_phone.num_writes
+          ))
+
         cell = selected_phone.PCS_cell
         if cell is not None:
           cell.draw(color=(255,255,255), width=5)

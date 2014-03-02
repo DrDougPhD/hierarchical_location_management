@@ -20,6 +20,7 @@ class BaseLocationManager(Hexagon):
       phone.id,
       id(self)
     ))
+    phone.num_writes += 1
     del self.registered_phones[phone.id]
 
     if self.parent is not None:
@@ -36,6 +37,7 @@ class BasicPointerLocationManager(BaseLocationManager):
     # When the phone ID is first in the database of the registration area,
     #  then we have found the Least Common Ancestor of the old and new
     #  registration areas.
+    phone.num_reads += 1
     if phone.id in self.registered_phones:
       # The LCA does not need to be updated since it does have the phone
       #  within its subtree registration areas. However, since the current
@@ -67,6 +69,7 @@ class BasicPointerLocationManager(BaseLocationManager):
         phone.id,
         id(self)
       ))
+      phone.num_writes += 1
       self.registered_phones[phone.id] = phone
 
     else:
@@ -77,6 +80,7 @@ class BasicPointerLocationManager(BaseLocationManager):
         id(self),
         id(child_caller)
       ))
+      phone.num_writes += 1
       self.registered_phones[phone.id] = child_caller
 
 
@@ -86,6 +90,7 @@ class BasicPointerLocationManager(BaseLocationManager):
       phone.id,
       id(self)
     ))
+    phone.num_reads += 1
     ptr = self.registered_phones[phone.id]
 
     # Check to see if the current registration area is actually a PCS cell.
@@ -105,5 +110,6 @@ class BasicPointerLocationManager(BaseLocationManager):
       id(self),
       id(self.registered_phones[phone.id])
     ))
+    phone.num_writes += 1
     del self.registered_phones[phone.id]
 

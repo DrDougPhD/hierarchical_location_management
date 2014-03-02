@@ -17,6 +17,8 @@ class Phone(pygame.sprite.Sprite, Point):
     # This is the geographic cell in which the phone is within. The center of
     #  this cell has a base station with which this phone can connect with
     #  to make calls, register its location, etc.
+    self.num_writes = 0
+    self.num_reads = 0
     self.PCS_cell = None
     for h in self.cells:
       if h.contains(self):
