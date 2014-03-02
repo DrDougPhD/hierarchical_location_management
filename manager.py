@@ -39,7 +39,7 @@ class BaseLocationManager(Hexagon):
     if callee in self.registered_phones:
       record = self.registered_phones[callee]
       print("Record: {0}".format(record))
-      if type(record) is BaseLocationManager:
+      if isinstance(record, BaseLocationManager):
         # If the record points to a Registration Area, then we have not found
         #  the cell containing the phone yet and must continue searching.
         print("RA record for {0} is found from {1} (depth {2}) -> {3} (depth"
@@ -172,22 +172,37 @@ class BasicValueLocationManager(BaseLocationManager):
       id(self)
     ))
 
-    cell_to_update = None
     if cell_of_caller is None:
-      cell_of_caller = self
-    # All registration areas above this registration area must be updated.
-    phone.num_reads += 1
-    if phone.id in self.registered_phones:
+      # This registration area is the cell of caller.
+      phone.num_writes += 1
+      self.registered_phones[phone.id] = phone
+      cell_to_update = None
+      print("{0} - REGISTER: For {1}, {2} -> {1}".format(
+        self.depth,
+        phone.id,
+        id(self)
+      ))
+
+    elif phone.id in self.registered_phones:
+      # This registration area is a parent of the cell of caller.
+
+      # All registration areas above this registration area must be updated.
+      phone.num_reads += 1
       print("{0} - REGISTER found pre-existing record for {1} at {2} (-> {3})".format(
         self.depth,
         phone.id,
         id(self),
         id(self.registered_phones[phone.id])
       ))
-      cell_to_update = self.registered_phones[phone.id]
+      self.registered_phones[phone.id].unregister(phone)
+
+      # This record will be deleted in the unregister() procedure, and will
+      #  be updated immediately once unregistering is complete. Thus, it is
+      #  only considered as one write.
+      phone.num_writes -= 1
 
     phone.num_writes += 1
-    self.registered_phones[phone.id] = cell_of_caller
+    self.registered_phones[phone.id] = cell_to_update
     print("{0} - REGISTER: For {1}, {2} -> {3}".format(
       self.depth,
       phone.id,
@@ -197,8 +212,6 @@ class BasicValueLocationManager(BaseLocationManager):
 
     if self.parent is not None:
       self.parent.register(phone, cell_of_caller)
-    elif cell_to_update is not None:
-      cell_to_update.unregister(phone)
 
 
   def unregister(self, phone, old_cell=None):
@@ -210,14 +223,13 @@ class BasicValueLocationManager(BaseLocationManager):
 
     if old_cell is None:
       old_cell = self
-      phone.num_writes += 1
-
       print("{0} - UNREGISTER of {1}: {2} -x-> {3}".format(
         self.depth,
         phone.id,
         id(self),
         id(self.registered_phones[phone.id])
       ))
+      phone.num_writes += 1
       del self.registered_phones[phone.id]
 
     if self.parent is not None:
