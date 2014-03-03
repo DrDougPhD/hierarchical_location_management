@@ -5,6 +5,29 @@ class BaseLocationManager(Hexagon):
     Hexagon.__init__(self, *args, **kwargs)
     self.registered_phones = {}
 
+    # local_calls is a dictionary, keyed on the phone's id, valued at
+    #  the number of calls made to the phone from all cells within this
+    #  registration area.
+    self.local_calls = {}
+
+    # mobility is a dictionary, keyed on the phone's id, valued at
+    #  the number of movements made by the phone.
+    self.phone_mobility = {}
+
+
+  def update_location(self, phone):
+    # The phone has entered this cell, and needs to register. This should kick
+    #  a recursive registration.
+    phone.num_writes += 1
+    self.registered_phones[phone.id] = phone
+    print("{0} - REGISTER for {1} at call: {2} -> {1}".format(
+      self.depth,
+      phone.id,
+      id(self)
+    ))
+    self.recursive_update_mobility(phone)
+    self.parent.register(phone, self)
+
 
   def register(self, phone, child_caller=None):
     pass
@@ -72,6 +95,46 @@ class BaseLocationManager(Hexagon):
       print("Call trace: {0} -> VOICEMAIL".format(trace))
 
 
+  def recursive_increment_local_calls(self, callee):
+    if callee in self.local_calls:
+      self.local_calls[callee] += 1
+    else:
+      self.local_calls[callee] = 1
+
+    print("{0}-{1}: {2} had {3} calls from this subtree".format(
+      self.depth,
+      id(self),
+      callee,
+      self.local_calls[callee]
+    ))
+
+    if self.parent is not None:
+      self.parent.recursive_increment_local_calls(callee)
+
+
+  def recursive_update_mobility(self, phone):
+    if self.parent is not None:
+      self.parent.recursive_update_mobility(phone)
+
+    else:
+      self.phone_mobility[phone.id] = phone.mobility
+      for h in self.internal_hexagons:
+        h.trickle_down_update_mobility(phone)
+
+
+  def trickle_down_update_mobility(self, phone):
+    self.phone_mobility[phone.id] = phone.mobility
+    #print("{0}-{1}: {2} has moved {3} times".format(
+    #  self.depth,
+    #  id(self),
+    #  phone.id,
+    #  self.phone_mobility[phone.id]
+    #))
+    if self.internal_hexagons is not None:
+      for h in self.internal_hexagons:
+        h.trickle_down_update_mobility(phone)
+
+
 class BasicPointerLocationManager(BaseLocationManager):
   # Each Registration Area has records for the phones within its registration
   #  area, where the values associated with the phone IDs are pointers to the
@@ -106,30 +169,15 @@ class BasicPointerLocationManager(BaseLocationManager):
       ))
       self.parent.register(phone, self)
 
-    # We do need to update the LCA to point to the correct RA within its
-    #  subtree.
-    #if self.internal_hexagons[0].initialized:
-    if child_caller is None:
-      # If the child caller is None, then this cell is a low-level cell and
-      #  should point to the phone.
-      print("{0} - REGISTER set cell site of {1} at {2}".format(
-        self.depth,
-        phone.id,
-        id(self)
-      ))
-      phone.num_writes += 1
-      self.registered_phones[phone.id] = phone
-
-    else:
-      # The child caller should be set to the new pointer in the database.
-      print("{0} - REGISTER set for {1}: {2} -> {3}".format(
-        self.depth,
-        phone.id,
-        id(self),
-        id(child_caller)
-      ))
-      phone.num_writes += 1
-      self.registered_phones[phone.id] = child_caller
+    # The child caller should be set to the new pointer in the database.
+    print("{0} - REGISTER set for {1}: {2} -> {3}".format(
+      self.depth,
+      phone.id,
+      id(self),
+      id(child_caller)
+    ))
+    phone.num_writes += 1
+    self.registered_phones[phone.id] = child_caller
 
 
   def unregister(self, phone):
@@ -172,20 +220,7 @@ class BasicValueLocationManager(BaseLocationManager):
       id(self)
     ))
 
-    if cell_of_caller is None:
-      # This registration area is the cell of caller.
-      cell_of_caller = self
-
-      phone.num_writes += 1
-      self.registered_phones[phone.id] = phone
-      print("{0} - REGISTER: For {1}, {2} -> {1}".format(
-        self.depth,
-        phone.id,
-        id(self)
-      ))
-
-    else:
-      if phone.id in self.registered_phones:
+    if phone.id in self.registered_phones:
         # This registration area is a parent of the cell of caller.
 
         # All registration areas above this registration area must be updated.
@@ -202,16 +237,16 @@ class BasicValueLocationManager(BaseLocationManager):
         #  be updated immediately once unregistering is complete. Thus, it is
         #  only considered as one write.
 
-      else:
+    else:
         phone.num_writes += 1
 
-      self.registered_phones[phone.id] = cell_of_caller
-      print("{0} - REGISTER: For {1}, {2} -> {3}".format(
+    self.registered_phones[phone.id] = cell_of_caller
+    print("{0} - REGISTER: For {1}, {2} -> {3}".format(
         self.depth,
         phone.id,
         id(self),
         id(cell_of_caller)
-      ))
+    ))
 
     if self.parent is not None:
       self.parent.register(phone, cell_of_caller)

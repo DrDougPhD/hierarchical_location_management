@@ -7,7 +7,7 @@ class Phone(pygame.sprite.Sprite, Point):
   def __init__(self, char, center, cells):
     pygame.sprite.Sprite.__init__(self)
     Point.__init__(self, center)
-
+    self.mobility = 1
     # This is the unique name/address of the phone.
     self.id = char
 
@@ -23,7 +23,7 @@ class Phone(pygame.sprite.Sprite, Point):
     for h in self.cells:
       if h.contains(self):
         self.PCS_cell = h
-        h.register(self)
+        h.update_location(self)
 
     # These member variables are required for this Phone class to be a
     #  sprite.
@@ -85,12 +85,13 @@ class Phone(pygame.sprite.Sprite, Point):
     #  1. None -> Cell
     #  2. Cell -> Cell
     #  3. Cell -> None
+    self.mobility += 1
     if self.PCS_cell is None:
       #  1. None -> Cell
       for h in self.cells:
         if h.contains(self):
           self.PCS_cell = h
-          h.register(self)
+          h.update_location(self)
           return
 
     else:
@@ -101,7 +102,7 @@ class Phone(pygame.sprite.Sprite, Point):
       for h in self.cells:
         if h.contains(self):
           self.PCS_cell = h
-          h.register(self)
+          h.update_location(self)
 
       if self.PCS_cell is None:
         # The phone has roamed out of its coverage area, and thus should
@@ -116,6 +117,7 @@ class Phone(pygame.sprite.Sprite, Point):
       callee
     ))
     if self.PCS_cell is not None:
+      self.PCS_cell.recursive_increment_local_calls(callee)
       self.PCS_cell.search_for(callee, self)
     else:
       print("{0} is not in a coverage area. Calls not possible.".format(
