@@ -47,6 +47,7 @@ class Hexagon(Polygon):
       self.initialized = False
       self.parent = parent
       self.depth = depth
+      self.internal_hexagons = None
 
     self.color = color if color is not None else RANDOM_COLOR()
     # Keys are the phone IDs, values are pointers to the PCS cell or
