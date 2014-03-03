@@ -80,6 +80,7 @@ class Phone(pygame.sprite.Sprite, Point):
         return True
 
   def update_location(self):
+    print("X"*80)
     # It is assumed that the phone has updated its location, which is one of
     #  the possible update scenarios:
     #  1. None -> Cell
@@ -112,6 +113,7 @@ class Phone(pygame.sprite.Sprite, Point):
 
   def call(self, callee):
     # Callee is the unique name of the phone being called by this phone.
+    print("="*80)
     print("{0} calling {1}".format(
       self.id,
       callee

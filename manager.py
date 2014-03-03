@@ -294,7 +294,6 @@ class ReplicationLocationManager(BasicPointerLocationManager):
 
 
   def search_for(self, callee, caller, trace=None):
-    print("NEW SEARCH CALLED")
     # Callee is the unique name of the phone being called.
     # Caller is the phone object placing the call.
     if trace is None:
@@ -322,6 +321,7 @@ class ReplicationLocationManager(BasicPointerLocationManager):
 
     # The number of calls to the callee originating from this cell's subtree
     #  has already been updated.
+    caller.num_reads += 1
     if callee in self.replicas:
       if self.replicas[callee] is not None:
         return self.replicas[callee].search_for(callee, caller, trace)
@@ -359,6 +359,7 @@ class ReplicationLocationManager(BasicPointerLocationManager):
           id(cell_of_callee) if cell_of_callee is not None else "NOWHERE",
           id(self)
         ))
+        caller.num_writes += 1
         self.replicas[callee] = cell_of_callee
 
       return cell_of_callee
@@ -373,13 +374,29 @@ class ReplicationLocationManager(BasicPointerLocationManager):
 
 
   def trickle_down_update_mobility(self, phone):
-    print("NEW TRICKLE CALLED")
+    phone.num_writes += 1
     self.phone_mobility[phone.id] = phone.mobility
     lcmr = self.local_calls[phone.id] / float(self.phone_mobility[phone.id])
     if lcmr > self.S_max:
+      print("{0} - LCMR of {1} for phone {2} above threshold."
+            " Creating replica. {3} > {4}".format(
+        self.depth,
+        id(self),
+        phone.id,
+        lcmr,
+        self.S_max
+      ))
       self.replicas[phone.id] = phone.PCS_cell
 
     elif lcmr < self.S_max and phone.id in self.replicas:
+      print("{0} - LCMR of {1} for phone {2} below threshold."
+            " Deleting replica. {3} < {4}".format(
+        self.depth,
+        id(self),
+        phone.id,
+        lcmr,
+        self.S_max
+      ))
       del self.replicas[phone.id]
 
     if self.internal_hexagons is not None:
