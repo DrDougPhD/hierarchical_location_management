@@ -1,4 +1,5 @@
 from hexagon import Hexagon
+from collections import defaultdict
 class BaseLocationManager(Hexagon):
   def __init__(self, *args, **kwargs):
     # Don't worry about understanding this, just add this to your 
@@ -8,7 +9,7 @@ class BaseLocationManager(Hexagon):
     # local_calls is a dictionary, keyed on the phone's id, valued at
     #  the number of calls made to the phone from all cells within this
     #  registration area.
-    self.local_calls = {}
+    self.local_calls = defaultdict(int)
 
     # mobility is a dictionary, keyed on the phone's id, valued at
     #  the number of movements made by the phone.
@@ -283,3 +284,104 @@ class BasicValueLocationManager(BaseLocationManager):
         del self.parent.registered_phones[phone.id]
         self.parent.unregister(phone, old_cell)
 
+
+class ReplicationLocationManager(BasicPointerLocationManager):
+  S_min = 2
+  S_max = 2
+  def __init__(self, *args, **kwargs):
+    BasicPointerLocationManager.__init__(self, *args, **kwargs)
+    self.replicas = {}
+
+
+  def search_for(self, callee, caller, trace=None):
+    print("NEW SEARCH CALLED")
+    # Callee is the unique name of the phone being called.
+    # Caller is the phone object placing the call.
+    if trace is None:
+      trace = caller.id
+
+    trace = "{0} -> {1} (depth {2})".format(trace, id(self), self.depth)
+
+    # 1. This RA has a replica of the callee.
+    # 1a. This RA has a LCMR that satisfies the replica's presence.
+    #  -> Call search on the replica.
+    # 1b. This RA has an unsatisfactory LCMR.
+    #  -> Delete the replica.
+    # 2. This RA does not have a replica.
+    # 2a. This RA has a record for the callee.
+    # 2a1. This record points to another RA.
+    #   -> Call search on the RA.
+    # 2a2. This record points to the phone.
+    #   -> End search.
+    # 2b. This RA does not have a record for the callee.
+    # 2b1. This RA has a parent.
+    #   -> Call search on the parent.
+    # 2b2. This RA does not have a parent.
+    #   -> End search, callee not in coverage area.
+    # If this RA has a sufficient LCMR, then store a replica.
+
+    # The number of calls to the callee originating from this cell's subtree
+    #  has already been updated.
+    if callee in self.replicas:
+      if self.replicas[callee] is not None:
+        return self.replicas[callee].search_for(callee, caller, trace)
+
+      else:
+        # Not in coverage area.
+        print("CALL TRACE: {0} -> VOICEMAIL".format(trace))
+        return None
+
+    else:
+      if callee in self.registered_phones:
+        record = self.registered_phones[callee]
+        if isinstance(record, BaseLocationManager):
+          cell_of_callee = record.search_for(callee, caller, trace)
+
+        else:
+          print("CALL TRACE: {0} -> {1}".format(
+            trace,
+            callee
+          ))
+          return self
+
+      elif self.parent is not None:
+        cell_of_callee = self.parent.search_for(callee, caller, trace)
+
+      else:
+        print("CALL TRACE: {0} -> VOICEMAIL".format(trace))
+        cell_of_callee = None
+
+      lcmr = self.local_calls[callee] / float(self.phone_mobility[callee])
+      if lcmr > self.S_max:
+        print("{0} - REPLICATING profile of {1} (located at {2}) to {3}".format(
+          self.depth,
+          callee,
+          id(cell_of_callee) if cell_of_callee is not None else "NOWHERE",
+          id(self)
+        ))
+        self.replicas[callee] = cell_of_callee
+
+      return cell_of_callee
+
+
+  #def register(self, phone):
+  #  pass
+
+
+  #def unregister(self, phone):
+  #  pass
+
+
+  def trickle_down_update_mobility(self, phone):
+    print("NEW TRICKLE CALLED")
+    self.phone_mobility[phone.id] = phone.mobility
+    lcmr = self.local_calls[phone.id] / float(self.phone_mobility[phone.id])
+    if lcmr > self.S_max:
+      self.replicas[phone.id] = phone.PCS_cell
+
+    elif lcmr < self.S_max and phone.id in self.replicas:
+      del self.replicas[phone.id]
+
+    if self.internal_hexagons is not None:
+      for h in self.internal_hexagons:
+        h.trickle_down_update_mobility(phone)

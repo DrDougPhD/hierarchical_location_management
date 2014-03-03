@@ -13,13 +13,15 @@ from settings import X_RES
 from settings import Y_RES
 from manager import BasicPointerLocationManager
 from manager import BasicValueLocationManager
+from manager import ReplicationLocationManager
 from phone import Phone
 
 def draw_all_hexagons(center, side_length):
   center_point = numpy.array([(center)]).T
   # Create all hexagons within the viewing window.
   #root_hexagon = BasicPointerLocationManager(
-  root_hexagon = BasicValueLocationManager(
+  #root_hexagon = BasicValueLocationManager(
+  root_hexagon = ReplicationLocationManager(
     center=center_point,
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
     side_length=side_length
@@ -184,5 +186,5 @@ if __name__ == "__main__":
         phones.draw(screen)
         pygame.display.update()
 
-      else:
-        print(event)
+      #else:
+      #  print(event)
