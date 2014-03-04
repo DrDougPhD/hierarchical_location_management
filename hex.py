@@ -14,6 +14,7 @@ from settings import Y_RES
 from manager import BasicPointerLocationManager
 from manager import BasicValueLocationManager
 from manager import ReplicationLocationManager
+from manager import ForwardingPointerLocationManager
 from phone import Phone
 
 def draw_all_hexagons(center, side_length):
@@ -21,7 +22,8 @@ def draw_all_hexagons(center, side_length):
   # Create all hexagons within the viewing window.
   #root_hexagon = BasicPointerLocationManager(
   #root_hexagon = BasicValueLocationManager(
-  root_hexagon = ReplicationLocationManager(
+  #root_hexagon = ReplicationLocationManager(
+  root_hexagon = ForwardingPointerLocationManager(
     center=center_point,
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
     side_length=side_length

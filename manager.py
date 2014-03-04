@@ -402,3 +402,119 @@ class ReplicationLocationManager(BasicPointerLocationManager):
     if self.internal_hexagons is not None:
       for h in self.internal_hexagons:
         h.trickle_down_update_mobility(phone)
+
+
+class ForwardingPointerLocationManager(BasicPointerLocationManager):
+  def __init__(self, *args, **kwargs):
+    BasicPointerLocationManager.__init__(self, *args, **kwargs)
+    self.phone_record_instantiated = defaultdict(bool)
+
+
+  def register(self, phone, child_caller=None):
+    print("{0} - REGISTER of {1} at {2}".format(
+      self.depth,
+      phone.id,
+      id(self)
+    ))
+    # When the phone ID is first in the database of the registration area,
+    #  then we have found the Least Common Ancestor of the old and new
+    #  registration areas.
+    phone.num_reads += 1
+    if phone.id in self.registered_phones:
+      # The LCA does not need to be updated since it does have the phone
+      #  within its subtree registration areas. However, since the current
+      #  record is pointing to another registration area that is not accurate,
+      #  then we need to unregister it, along with all other registration areas
+      #  underneath it.
+      print("{0} - REGISTER found LCA of {1} at {2}".format(
+        self.depth,
+        phone.id,
+        id(self)
+      ))
+      t = child_caller
+      s = self.registered_phones[phone.id]
+      s.unregister(phone)
+      s.registered_phones[phone.id] = t
+    elif self.parent is not None:
+      print("{0} - REGISTER did not find {1} at {2}".format(
+        self.depth,
+        phone.id,
+        id(self)
+      ))
+      self.parent.register(phone, self)
+
+      # The child caller should be set to the new pointer in the database.
+      print("{0} - REGISTER set for {1}: {2} -> {3}".format(
+        self.depth,
+        phone.id,
+        id(self),
+        id(child_caller)
+      ))
+      phone.num_writes += 1
+      self.registered_phones[phone.id] = child_caller
+
+    if not self.phone_record_instantiated[phone.id]:
+      self.phone_record_instantiated[phone.id] = True
+      # The child caller should be set to the new pointer in the database.
+      print("{0} - REGISTER set for {1}: {2} -> {3}".format(
+        self.depth,
+        phone.id,
+        id(self),
+        id(child_caller)
+      ))
+      phone.num_writes += 1
+      self.registered_phones[phone.id] = child_caller
+
+
+  """
+  def search_for(self, callee, caller, trace=None):
+    # Callee is the unique name of the phone being called.
+    # Caller is the phone object placing the call.
+    if trace is None:
+      trace = "{0} -> {1} (depth {2})".format(caller.id, id(self), self.depth)
+    else:
+      trace = "{0} -> {1} (depth {2})".format(trace, id(self), self.depth)
+
+    caller.num_reads += 1
+    if callee in self.registered_phones:
+      record = self.registered_phones[callee]
+      if caller.id in self.registered_phones:
+        # We have found the LCA of caller and callee.
+        s = self.registered_phones[caller.id]
+        t = record
+        s.registered_phones[callee] = t
+
+      print("Record: {0}".format(record))
+      if isinstance(record, BaseLocationManager):
+        # If the record points to a Registration Area, then we have not found
+        #  the cell containing the phone yet and must continue searching.
+        print("RA record for {0} is found from {1} (depth {2}) -> {3} (depth"
+              " {4}). Following pointer.".format(
+          callee,
+          id(self),
+          self.depth,
+          id(record),
+          record.depth
+        ))
+        record.search_for(callee, caller, trace)
+
+      else:
+        print("Cell for {0} is found at {1} (depth {2}). Connecting call for"
+              " {3} -> {0}".format(
+          callee,
+          id(self),
+          self.depth,
+          caller.id
+        ))
+        print("Call trace: {0} -> {1}".format(trace, callee))
+
+    elif self.parent is not None:
+      self.parent.search_for(callee, caller, trace)
+
+    else:
+      print("Callee {0} is not registered in the network. VOICEMAIL.".format(
+        callee
+      ))
+      print("Call trace: {0} -> VOICEMAIL".format(trace))
+
+  """
