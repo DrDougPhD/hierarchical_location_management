@@ -125,12 +125,6 @@ class BaseLocationManager(Hexagon):
 
   def trickle_down_update_mobility(self, phone):
     self.phone_mobility[phone.id] = phone.mobility
-    #print("{0}-{1}: {2} has moved {3} times".format(
-    #  self.depth,
-    #  id(self),
-    #  phone.id,
-    #  self.phone_mobility[phone.id]
-    #))
     if self.internal_hexagons is not None:
       for h in self.internal_hexagons:
         h.trickle_down_update_mobility(phone)
@@ -365,16 +359,7 @@ class ReplicationLocationManager(BasicPointerLocationManager):
       return cell_of_callee
 
 
-  #def register(self, phone):
-  #  pass
-
-
-  #def unregister(self, phone):
-  #  pass
-
-
   def trickle_down_update_mobility(self, phone):
-    phone.num_writes += 1
     self.phone_mobility[phone.id] = phone.mobility
     lcmr = self.local_calls[phone.id] / float(self.phone_mobility[phone.id])
     if lcmr > self.S_max:
@@ -386,6 +371,7 @@ class ReplicationLocationManager(BasicPointerLocationManager):
         lcmr,
         self.S_max
       ))
+      phone.num_writes += 1
       self.replicas[phone.id] = phone.PCS_cell
 
     elif lcmr < self.S_max and phone.id in self.replicas:
@@ -397,6 +383,7 @@ class ReplicationLocationManager(BasicPointerLocationManager):
         lcmr,
         self.S_max
       ))
+      phone.num_writes += 1
       del self.replicas[phone.id]
 
     if self.internal_hexagons is not None:

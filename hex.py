@@ -20,10 +20,6 @@ from phone import Phone
 def draw_all_hexagons(center, side_length, location_manager):
   center_point = numpy.array([(center)]).T
   # Create all hexagons within the viewing window.
-  #root_hexagon = BasicPointerLocationManager(
-  #root_hexagon = BasicValueLocationManager(
-  #root_hexagon = ReplicationLocationManager(
-  #root_hexagon = ForwardingPointerLocationManager(
   root_hexagon = location_manager(
     center=center_point,
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
@@ -100,7 +96,7 @@ if __name__ == "__main__":
   for l in phone_labels:
     phone_dict[l] = Phone(
       char=l.upper(),
-      center=phone_locations[phone_labels.index(l)],#random_coord_within_screen((X_RES, Y_RES)),
+      center=phone_locations[phone_labels.index(l)],
       cells=PCS_cells
     )
 
@@ -228,5 +224,3 @@ if __name__ == "__main__":
         phones.draw(screen)
         pygame.display.update()
 
-      #else:
-      #  print(event)
