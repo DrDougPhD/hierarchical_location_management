@@ -143,6 +143,18 @@ class Hexagon(Polygon):
         width
       )
 
+      # Label the hexagons according to their address id.
+      label_font = pygame.font.SysFont("monospace", 12)
+      label = label_font.render(str(id(self)), True, (0, 0, 0))
+      x = float(self.northwest_vertex[0])
+      y = float(self.northwest_vertex[1])
+      p = (x, y)
+      label_top_left_corner = transform_points_for_pygame([p])[0]
+      pygame.display.get_surface().blit(
+        label,
+        label_top_left_corner
+      )
+
 
   def draw_vertices(self, color=None):
     if self.initialized:
