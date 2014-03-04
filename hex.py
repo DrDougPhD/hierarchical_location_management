@@ -17,13 +17,14 @@ from manager import ReplicationLocationManager
 from manager import ForwardingPointerLocationManager
 from phone import Phone
 
-def draw_all_hexagons(center, side_length):
+def draw_all_hexagons(center, side_length, location_manager):
   center_point = numpy.array([(center)]).T
   # Create all hexagons within the viewing window.
   #root_hexagon = BasicPointerLocationManager(
   #root_hexagon = BasicValueLocationManager(
   #root_hexagon = ReplicationLocationManager(
-  root_hexagon = ForwardingPointerLocationManager(
+  #root_hexagon = ForwardingPointerLocationManager(
+  root_hexagon = location_manager(
     center=center_point,
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
     side_length=side_length
@@ -50,10 +51,25 @@ def draw_all_hexagons(center, side_length):
   ]
   return hexagons
 
-
 if __name__ == "__main__":
   import sys
   pygame.init()
+
+  from manager import BasicPointerLocationManager
+  from manager import BasicValueLocationManager
+  from manager import ReplicationLocationManager
+  from manager import ForwardingPointerLocationManager
+
+  location_manager_index = int(sys.argv[-1])
+  location_managers = [
+    BasicPointerLocationManager,
+    BasicValueLocationManager,
+    ReplicationLocationManager,
+    ForwardingPointerLocationManager
+  ]
+  location_manager = location_managers[location_manager_index]
+  print("Location manager set to {0}".format(location_manager.__name__))
+
   screen = pygame.display.set_mode((X_RES, Y_RES))
   BACKGROUND_COLOR = (127, 127, 127)
   screen.fill(BACKGROUND_COLOR)
@@ -61,7 +77,8 @@ if __name__ == "__main__":
   # Create every hexagon on each level.
   hexagons = draw_all_hexagons(
     center=(X_RES/2, Y_RES/2),
-    side_length=Y_RES/2
+    side_length=Y_RES/2,
+    location_manager=location_manager
   )
   PCS_cells = hexagons[-1]
   current_depth = len(hexagons)-1
@@ -71,12 +88,19 @@ if __name__ == "__main__":
   random_coord_within_screen = lambda coords: [
     random.randint(0, coords[i]) for i in range(2)
   ]
+  phone_locations = [
+    (X_RES/2., Y_RES/2.),
+    (X_RES/2., Y_RES/3.),
+    (X_RES/3., Y_RES*3/4.),
+    (X_RES*9/11., Y_RES/4.),
+    (X_RES/4., Y_RES*4/5.)
+  ]
 
   phone_dict = {}
   for l in phone_labels:
     phone_dict[l] = Phone(
       char=l.upper(),
-      center=random_coord_within_screen((X_RES, Y_RES)),
+      center=phone_locations[phone_labels.index(l)],#random_coord_within_screen((X_RES, Y_RES)),
       cells=PCS_cells
     )
 
@@ -95,7 +119,23 @@ if __name__ == "__main__":
 
   while True:
     for event in pygame.event.get(): 
-      if event.type == pygame.QUIT: 
+      if event.type == pygame.QUIT:
+        def write_out_results(location_manager, phones):
+          num_searches = 0
+          num_updates = 0
+          for k in phones:
+            num_updates += phones[k].num_writes
+            num_searches += phones[k].num_reads
+
+          with open(location_manager + "_results.txt", "w") as f:
+            f.write(location_manager + "\n")
+            f.write("Number of searches: {0}\n".format(num_searches))
+            f.write("Number of updates:  {0}\n".format(num_updates))
+
+        write_out_results(
+          location_manager=location_manager.__name__,
+          phones=phone_dict
+        )
         sys.exit(0) 
       elif event.type == pygame.KEYDOWN:
 
